@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Lines</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Policy Lines</h1>
+    <p class="subtitle">UK Government policy papers &amp; consultations</p>
+    <nav>
+      <button class="nav-btn active" data-view="pulse">The Pulse</button>
+      <button class="nav-btn" data-view="signal">The Signal</button>
+      <button class="nav-btn" data-view="terrain">The Terrain</button>
+      <button class="nav-btn" data-view="mandala">The Mandala</button>
+      <button class="nav-btn" data-view="graveyard">The Graveyard</button>
+    </nav>
+  </header>
+  <main id="app">
+    <div id="view-container"></div>
+  </main>
+  <footer>
+    <span>© tomwm</span>
+    <span class="footer-divider">·</span>
+    <span>Experimental tool — not official government information</span>
+    <span class="footer-divider">·</span>
+    <span>Data: <a href="https://www.gov.uk/search/policy-papers-and-consultations" target="_blank" rel="noopener">GOV.UK Search API</a></span>
+  </footer>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "dist",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/policy-lines/:path*", "destination": "/policy-lines/index.html" },
+    { "source": "/uk-gov-network-graph/:path*", "destination": "/uk-gov-network-graph/index.html" }
+  ]
+}

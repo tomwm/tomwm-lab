@@ -1,0 +1,12 @@
+{
+  "name": "tomwm-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "build": "node build.js",
+    "dev:policy-lines": "npm -w apps/policy-lines run dev",
+    "dev:uk-gov-network-graph": "npm -w apps/uk-gov-network-graph run dev"
+  }
+}
