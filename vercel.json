@@ -5,6 +5,6 @@
   "rewrites": [
     { "source": "/policy-lines/:path*",      "destination": "/policy-lines/index.html" },
     { "source": "/uk-gov-network-graph/:path*", "destination": "/uk-gov-network-graph/index.html" },
-    { "source": "/smile",                    "destination": "/smile/" }
+    { "source": "/smile",                    "destination": "/smile/index.html" }
   ]
 }
