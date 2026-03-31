@@ -128,7 +128,7 @@ function stopCamera() {
 }
 
 // ── Face detection ────────────────────────────────────────────────────────────
-const MODEL_URL = '/weights';
+const MODEL_URL = 'weights';
 
 async function loadFaceModels() {
   await Promise.all([
