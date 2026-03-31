@@ -1,0 +1,13 @@
+{
+  "name": "smile",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "python3 -m http.server 8080",
+    "deploy:party": "npx partykit deploy"
+  },
+  "devDependencies": {
+    "partykit": "^0.0.115"
+  }
+}

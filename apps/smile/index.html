@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smile</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f0f;
+      color: #eee;
+      font-family: 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.1em;
+      color: #aaa;
+      font-weight: 300;
+    }
+
+    /* ── Mode toggle ── */
+    #mode-toggle {
+      display: flex;
+      background: #1a1a1a;
+      border-radius: 30px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .toggle-btn {
+      padding: 8px 24px;
+      border: none;
+      border-radius: 26px;
+      background: transparent;
+      color: #666;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .toggle-btn.active {
+      background: #2a2a2a;
+      color: #eee;
+    }
+
+    /* ── Video ── */
+    #video-container {
+      position: relative;
+      width: 480px;
+      max-width: 100%;
+    }
+
+    #video {
+      width: 100%;
+      border-radius: 12px;
+      display: block;
+      transform: scaleX(-1);
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      transform: scaleX(-1);
+      pointer-events: none;
+    }
+
+    /* ── Status bar ── */
+    #status-bar {
+      width: 480px;
+      max-width: 100%;
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #mood-label { font-size: 1.8rem; }
+
+    #mood-text {
+      font-size: 0.9rem;
+      color: #888;
+      flex: 1;
+    }
+
+    #mode-tag {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #333;
+      color: #bbb;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Meters ── */
+    #meter-wrap {
+      width: 480px;
+      max-width: 100%;
+    }
+
+    .meter-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .meter-label {
+      width: 70px;
+      font-size: 0.75rem;
+      color: #666;
+      text-align: right;
+    }
+
+    .meter-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #222;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .meter-bar {
+      height: 100%;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.12s ease;
+    }
+
+    #bar-happy    { background: #5dde8c; }
+    #bar-sad      { background: #5b9fff; }
+    #bar-angry    { background: #ff6b6b; }
+    #bar-neutral  { background: #888; }
+    #bar-openness { background: linear-gradient(90deg, #5b9fff, #5dde8c); }
+
+    /* ── Controls ── */
+    #controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 480px;
+      max-width: 100%;
+    }
+
+    #volume-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    #volume-row label { font-size: 0.8rem; color: #666; white-space: nowrap; }
+
+    input[type=range] {
+      flex: 1;
+      accent-color: #5dde8c;
+      cursor: pointer;
+    }
+
+    #volume-value { font-size: 0.8rem; color: #666; width: 34px; text-align: right; }
+
+    #start-btn {
+      padding: 14px 40px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 30px;
+      background: #5dde8c;
+      color: #0f0f0f;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: opacity 0.2s;
+    }
+    #start-btn:hover    { opacity: 0.85; }
+    #start-btn:disabled { opacity: 0.4; cursor: default; }
+
+    #log {
+      font-size: 0.75rem;
+      color: #555;
+      max-width: 480px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>SMILE</h1>
+
+  <!-- Mode toggle -->
+  <div id="mode-toggle">
+    <button class="toggle-btn active" id="toggle-face">Face</button>
+    <button class="toggle-btn"        id="toggle-hand">Hand</button>
+  </div>
+
+  <!-- Camera feed -->
+  <div id="video-container">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+  </div>
+
+  <!-- Status -->
+  <div id="status-bar">
+    <span id="mood-label">😐</span>
+    <span id="mood-text">Waiting…</span>
+    <span id="mode-tag">–</span>
+  </div>
+
+  <!-- Meters -->
+  <div id="meter-wrap">
+    <!-- Face meters -->
+    <div id="face-meters">
+      <div class="meter-row">
+        <span class="meter-label">Happy</span>
+        <div class="meter-bar-bg"><div class="meter-bar" id="bar-happy"></div></div>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Sad</span>
+        <div class="meter-bar-bg"><div class="meter-bar" id="bar-sad"></div></div>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Angry</span>
+        <div class="meter-bar-bg"><div class="meter-bar" id="bar-angry"></div></div>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Neutral</span>
+        <div class="meter-bar-bg"><div class="meter-bar" id="bar-neutral"></div></div>
+      </div>
+    </div>
+
+    <!-- Hand meter -->
+    <div id="hand-meter" style="display:none">
+      <div class="meter-row">
+        <span class="meter-label">Openness</span>
+        <div class="meter-bar-bg"><div class="meter-bar" id="bar-openness"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <div id="volume-row">
+      <label for="volume-slider">Volume</label>
+      <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="1.0" />
+      <span id="volume-value">100%</span>
+    </div>
+    <button id="start-btn">Start</button>
+  </div>
+
+  <div id="users-connected" style="font-size:0.75rem;color:#5dde8c;min-height:1em;text-align:center"></div>
+  <div id="log">Loading…</div>
+
+  <!-- face-api -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- MediaPipe Hands (loaded globally so hand-engine.js can use `new Hands(...)`) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

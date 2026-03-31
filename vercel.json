@@ -5,7 +5,6 @@
   "rewrites": [
     { "source": "/policy-lines/:path*",      "destination": "/policy-lines/index.html" },
     { "source": "/uk-gov-network-graph/:path*", "destination": "/uk-gov-network-graph/index.html" },
-    { "source": "/smile",                    "destination": "https://smile-two-theta.vercel.app" },
-    { "source": "/smile/:path*",             "destination": "https://smile-two-theta.vercel.app/:path*" }
+    { "source": "/smile",                    "destination": "/smile/index.html" }
   ]
 }

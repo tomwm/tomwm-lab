@@ -10,6 +10,7 @@ const run = (cmd, cwd) => execSync(cmd, { stdio: 'inherit', cwd: cwd || __dirnam
 const apps = [
   'policy-lines',
   'uk-gov-network-graph',
+  'smile',
 ]
 
 mkdirSync(join(__dirname, 'dist'), { recursive: true })

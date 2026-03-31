@@ -4,3 +4,4 @@ apps/*/node_modules/
 apps/*/dist/
 apps/*/.claude/
 .vercel/
+.vercel
