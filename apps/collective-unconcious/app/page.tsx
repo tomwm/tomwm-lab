@@ -189,7 +189,7 @@ function CollectiveCloud({ data }: { data: CollectiveData }) {
 
   return (
     <div
-      className="flex flex-col gap-4 rounded-2xl p-5"
+      className="flex flex-col gap-5 rounded-2xl p-8"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
     >
       <div className="flex flex-wrap justify-center gap-2">
@@ -277,7 +277,7 @@ export default function Home() {
     <main className="relative min-h-screen flex flex-col items-center px-4 py-16">
       <StarField />
 
-      <div className="relative z-10 w-full max-w-2xl flex flex-col gap-10">
+      <div className="relative z-10 w-full max-w-2xl flex flex-col gap-14">
         {/* Header */}
         <header className="text-center flex flex-col gap-2">
           <p style={{ color: "var(--text-muted)", fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase" }}>The</p>
@@ -295,12 +295,12 @@ export default function Home() {
 
         {/* Input form */}
         {showForm && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
             <p style={{ color: "var(--text-muted)", fontSize: 12, textAlign: "center" }}>
               Your dream text is never stored — only broad themes (like &ldquo;transformation&rdquo;) and symbols (like &ldquo;mirror&rdquo;) are saved.
             </p>
             <section
-              className="rounded-2xl p-6 flex flex-col gap-4"
+              className="rounded-2xl p-8 flex flex-col gap-6"
               style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
             >
               <label htmlFor="dream-input" className="text-sm" style={{ color: "var(--text-muted)" }}>
