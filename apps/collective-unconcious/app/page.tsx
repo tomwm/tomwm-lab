@@ -118,10 +118,20 @@ function CollectiveTag({
         {label}
       </span>
       <div className="flex items-end justify-between gap-2">
-        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-          {count === 0 ? "only you today" : `${count} other ${count === 1 ? "dreamer" : "dreamers"} today`}
-        </span>
-        {history && history.some(d => d.count > 0) && (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {count === 0 ? "only you today" : `${count} other ${count === 1 ? "dreamer" : "dreamers"} today`}
+          </span>
+          {history && (() => {
+            const weekTotal = history.reduce((sum, d) => sum + d.count, 0);
+            return weekTotal > 0 ? (
+              <span className="text-xs" style={{ color: "var(--text-muted)", opacity: 0.7 }}>
+                {weekTotal} this week
+              </span>
+            ) : null;
+          })()}
+        </div>
+        {history && history.filter(d => d.count > 0).length > 1 && (
           <Sparkline history={history} variant={variant} />
         )}
       </div>
