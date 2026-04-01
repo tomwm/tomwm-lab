@@ -3,10 +3,9 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/policy-lines/:path*",          "destination": "/policy-lines/index.html" },
-    { "source": "/uk-gov-network-graph/:path*",  "destination": "/uk-gov-network-graph/index.html" },
-    { "source": "/smile",                        "destination": "/smile/index.html" },
-    { "source": "/collective-unconcious/:path*", "destination": "https://collective-unconcious.vercel.app/collective-unconcious/:path*" },
-    { "source": "/collective-unconcious",        "destination": "https://collective-unconcious.vercel.app/collective-unconcious" }
+    { "source": "/policy-lines/:path*",         "destination": "/policy-lines/index.html" },
+    { "source": "/uk-gov-network-graph/:path*", "destination": "/uk-gov-network-graph/index.html" },
+    { "source": "/smile",                       "destination": "/smile/index.html" },
+    { "source": "/collective-unconcious(.*)",   "destination": "https://collective-unconcious.vercel.app/collective-unconcious$1" }
   ]
 }
