@@ -161,7 +161,7 @@ function DreamStats({ today, total }: { today: number; total: number }) {
         </span>
       </div>
       {total > 0 && (
-        <span style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.6 }}>
+        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
           {animatedTotal} in total
         </span>
       )}
@@ -194,7 +194,7 @@ function CollectiveCloud({ data }: { data: CollectiveData }) {
           return (
             <span key={label} style={{
               fontSize: `${scale}rem`,
-              color: `rgba(167,139,250,${0.4 + (count / maxCount) * 0.6})`,
+              color: `rgba(167,139,250,${0.65 + (count / maxCount) * 0.35})`,
               fontFamily: "var(--font-crimson), Georgia, serif",
               transition: "opacity 0.3s",
               cursor: "default",
@@ -208,7 +208,7 @@ function CollectiveCloud({ data }: { data: CollectiveData }) {
           return (
             <span key={label} style={{
               fontSize: `${scale * 0.85}rem`,
-              color: `rgba(99,102,241,${0.35 + (count / maxCount) * 0.55})`,
+              color: `rgba(99,102,241,${0.7 + (count / maxCount) * 0.3})`,
               fontFamily: "var(--font-inter), sans-serif",
               transition: "opacity 0.3s",
               cursor: "default",
@@ -292,7 +292,7 @@ export default function Home() {
         {/* Input form */}
         {showForm && (
           <div className="flex flex-col gap-4">
-            <p style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.6, textAlign: "center" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: 12, textAlign: "center" }}>
               Your dream text and interpretation are never stored — only themes and symbols.
             </p>
             <section
