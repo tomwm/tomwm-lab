@@ -357,7 +357,7 @@ export default function Home() {
             {/* Interpretation */}
             <div className="flex flex-col gap-3">
               <h2 style={{ fontFamily: "var(--font-crimson), Georgia, serif", fontSize: "1.6rem", color: "var(--text-primary)", fontWeight: 400 }}>
-                Your Dream
+                Your Dream Interpretation
               </h2>
               {result.interpretation.split("\n\n").map((para, i) => (
                 <p key={i} className="leading-relaxed" style={{ color: "var(--text-primary)", fontSize: 15 }}>
