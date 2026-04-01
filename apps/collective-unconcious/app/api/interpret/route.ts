@@ -120,9 +120,10 @@ export async function POST(request: NextRequest) {
       symbolCounts,
     });
   } catch (err) {
-    console.error("[/api/interpret]", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[/api/interpret]", msg);
     return NextResponse.json(
-      { error: "Something went wrong while interpreting your dream. Please try again." },
+      { error: msg },
       { status: 500 }
     );
   }
