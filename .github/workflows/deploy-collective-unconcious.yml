@@ -1,0 +1,21 @@
+name: Deploy collective-unconcious
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/collective-unconcious/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        run: vercel --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --scope tomwms-projects
+        working-directory: apps/collective-unconcious
