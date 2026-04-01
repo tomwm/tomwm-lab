@@ -287,7 +287,7 @@ export default function Home() {
         {showForm && (
           <div className="flex flex-col gap-4">
             <p style={{ color: "var(--text-muted)", fontSize: 12, textAlign: "center" }}>
-              Your dream text is never stored — only broad themes (like "transformation") and symbols (like "mirror") are saved.
+              Your dream text is never stored — only broad themes (like &ldquo;transformation&rdquo;) and symbols (like &ldquo;mirror&rdquo;) are saved.
             </p>
             <section
               className="rounded-2xl p-6 flex flex-col gap-4"
