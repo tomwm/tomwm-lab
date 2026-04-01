@@ -182,12 +182,6 @@ function CollectiveCloud({ data }: { data: CollectiveData }) {
       className="flex flex-col gap-4 rounded-2xl p-5"
       style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
     >
-      <h2 style={{
-        fontFamily: "var(--font-crimson), Georgia, serif",
-        fontSize: "1.3rem", fontWeight: 400, color: "var(--text-muted)",
-      }}>
-        Themes and symbols moving through the collective this week
-      </h2>
       <div className="flex flex-wrap justify-center gap-2">
         {allThemes.map(({ label, count }) => {
           const scale = 0.75 + (count / maxCount) * 0.9;
@@ -293,7 +287,7 @@ export default function Home() {
         {showForm && (
           <div className="flex flex-col gap-4">
             <p style={{ color: "var(--text-muted)", fontSize: 12, textAlign: "center" }}>
-              Your dream text and interpretation are never stored — only themes and symbols.
+              Your dream text is never stored — only broad themes (like "transformation") and symbols (like "mirror") are saved.
             </p>
             <section
               className="rounded-2xl p-6 flex flex-col gap-4"
