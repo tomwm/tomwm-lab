@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { initDb, insertDreamSubmission, getCountsForToday } from "@/lib/db";
+import { initDb, insertDreamSubmission, getCountsForToday, getItemHistory } from "@/lib/db";
 import fs from "fs";
 import path from "path";
 
@@ -114,14 +114,27 @@ export async function POST(request: NextRequest) {
     const today = getTodayDateString();
 
     await insertDreamSubmission(today, normThemes, normSymbols);
-    const { themeCounts, symbolCounts } = await getCountsForToday(today, normThemes, normSymbols);
+
+    const [{ themeCounts, symbolCounts }, ...histories] = await Promise.all([
+      getCountsForToday(today, normThemes, normSymbols),
+      ...normThemes.map(t => getItemHistory("themes", t, 7)),
+      ...normSymbols.map(s => getItemHistory("symbols", s, 7)),
+    ]);
+
+    const themeHistory: Record<string, { date: string; count: number }[]> = {};
+    normThemes.forEach((t, i) => { themeHistory[t] = histories[i]; });
+
+    const symbolHistory: Record<string, { date: string; count: number }[]> = {};
+    normSymbols.forEach((s, i) => { symbolHistory[s] = histories[normThemes.length + i]; });
 
     return NextResponse.json({
       interpretation,
       themes: normThemes,
       themeCounts,
+      themeHistory,
       symbols: normSymbols,
       symbolCounts,
+      symbolHistory,
     });
   } catch (err) {
     console.error("[/api/interpret]", err instanceof Error ? err.message : String(err));
