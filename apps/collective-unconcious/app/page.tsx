@@ -169,7 +169,7 @@ export default function Home() {
   const [stats, setStats] = useState<{ today: number; total: number } | null>(null);
 
   useEffect(() => {
-    fetch("/api/stats")
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/stats`)
       .then((r) => r.json())
       .then((d) => setStats(d))
       .catch(() => {});
@@ -184,7 +184,7 @@ export default function Home() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("/api/interpret", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/interpret`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dream: trimmed }),
