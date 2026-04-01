@@ -178,9 +178,15 @@ function CollectiveCloud({ data }: { data: CollectiveData }) {
   if (allThemes.length === 0 && allSymbols.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-4" style={{ animation: "fadeInUp 0.6s ease-out both" }}>
-      <p style={{ color: "var(--text-muted)", fontSize: 12, textAlign: "center", opacity: 0.7 }}>
-        Themes & symbols moving through the collective this week
+    <div
+      className="flex flex-col gap-4 rounded-2xl p-5"
+      style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+    >
+      <p style={{
+        color: "var(--text-muted)", fontSize: 11, textAlign: "center",
+        letterSpacing: "0.15em", textTransform: "uppercase",
+      }}>
+        Moving through the collective this week
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         {allThemes.map(({ label, count }) => {
