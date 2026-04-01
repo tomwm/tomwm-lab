@@ -49,10 +49,11 @@ Rules for SYMBOLS (specific concrete elements that appeared):
 - Must be concrete things that appeared, not abstract concepts
 
 Rules for interpretation:
-- Approximately 150 words
+- Approximately 150 words total
+- 2 to 3 short paragraphs, separated by \n\n
 - Poetic but accessible — no academic jargon
 - Use second person ("you", "your")
-- End with a gentle open question for the dreamer
+- End the final paragraph with a gentle open question for the dreamer
 
 Respond with the JSON object only. No other text.`;
 }

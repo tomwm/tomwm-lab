@@ -359,9 +359,11 @@ export default function Home() {
               <h2 style={{ fontFamily: "var(--font-crimson), Georgia, serif", fontSize: "1.6rem", color: "var(--text-primary)", fontWeight: 400 }}>
                 Your Dream
               </h2>
-              <p className="leading-relaxed" style={{ color: "var(--text-primary)", fontSize: 15 }}>
-                {result.interpretation}
-              </p>
+              {result.interpretation.split("\n\n").map((para, i) => (
+                <p key={i} className="leading-relaxed" style={{ color: "var(--text-primary)", fontSize: 15 }}>
+                  {para}
+                </p>
+              ))}
             </div>
 
             <div style={{ borderTop: "1px solid var(--border)" }} />
