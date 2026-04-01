@@ -201,10 +201,9 @@ function CollectiveCloud({ data }: { data: CollectiveData }) {
           const scale = 0.7 + (count / maxCount) * 0.7;
           return (
             <span key={label} style={{
-              fontSize: `${scale}rem`,
+              fontSize: `${scale * 0.85}rem`,
               color: `rgba(99,102,241,${0.35 + (count / maxCount) * 0.55})`,
               fontFamily: "var(--font-inter), sans-serif",
-              fontSize: `${scale * 0.85}rem`,
               transition: "opacity 0.3s",
               cursor: "default",
             } as React.CSSProperties}>
