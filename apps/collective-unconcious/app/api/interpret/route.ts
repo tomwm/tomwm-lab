@@ -35,15 +35,18 @@ Respond with a JSON object in exactly this shape:
 
 Rules for THEMES (broad archetypal patterns):
 - Between 3 and 5 themes
-- Single lowercase word or short phrase (e.g. "flying", "loss", "being chased")
-- Archetypal and broadly relatable — not hyper-specific to this dream
-- No theme longer than 3 words
+- Prefer a single lowercase noun or gerund (e.g. "flying", "loss", "pursuit", "transformation")
+- Use the most common, canonical form — e.g. always "flying" not "flight" or "soaring"; always "water" not "ocean" or "sea" unless ocean/sea is clearly more accurate
+- Archetypal and broadly relatable — must be themes that many people could share
+- No theme longer than 2 words
+- Never use adjectives alone — use noun or verb forms
 
 Rules for SYMBOLS (specific concrete elements that appeared):
 - Between 3 and 6 symbols
-- The actual people, creatures, objects, or places in the dream (e.g. "grandmother", "black cat", "locked door", "red flowers")
-- Lowercase, specific enough to be recognisable but not so specific they'd never recur
-- No symbol longer than 3 words
+- The actual people, creatures, objects, or places in the dream (e.g. "grandmother", "black cat", "locked door", "flowers")
+- Use the simplest, most generic form — e.g. "cat" not "black cat", "door" not "locked door", unless the modifier is essential to the meaning
+- Lowercase single nouns where possible — no more than 2 words
+- Must be concrete things that appeared, not abstract concepts
 
 Rules for interpretation:
 - Approximately 150 words
@@ -82,6 +85,7 @@ export async function POST(request: NextRequest) {
     const message = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
+      temperature: 0,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: buildUserPrompt(dream) }],
     });
