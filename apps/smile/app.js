@@ -155,6 +155,7 @@ async function faceLoop() {
     drawFaceBox(result);
     const raw = expressionsToScore(result.expressions);
     smoothScore = smoothScore * 0.75 + raw * 0.25;
+    harmony.updateLocal(mySlot, smoothScore, 'face');
     sendScore(smoothScore);
     updateFaceUI(result.expressions, smoothScore);
   }
@@ -187,7 +188,7 @@ function onOpenness(openness) {
   if (!running || mode !== 'hand') return;
   const val = openness === null ? 0 : openness;
   smoothScore = smoothScore * 0.7 + val * 0.3;
-  // Send as 0–1 for hand mode
+  harmony.updateLocal(mySlot, smoothScore, 'hand');
   sendScore(smoothScore);
   updateHandUI(smoothScore);
   drawHandLandmarks(handEngine?.landmarks);

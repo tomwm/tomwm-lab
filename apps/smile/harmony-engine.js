@@ -1,18 +1,20 @@
 /**
  * harmony-engine.js
  *
- * Multi-user audio engine. Each connected user occupies a "slot" (0–3)
- * corresponding to a harmony voice: root, third, fifth, seventh.
+ * Multi-user audio engine. Each slot gets a sawtooth oscillator pitched to its
+ * harmony interval, fed through two bandpass formant filters — same voice
+ * synthesis as the hand mode (VoiceSynth).
  *
- * Face mode  → score maps note position within the voice's octave range.
- *              Scores slowly shift which scale degree is played → evolving chord.
- * Hand mode  → score = openness = volume. Note is fixed to the slot's interval.
- *              Users collectively shape the chord's loudness with their hands.
- *
- * Extensible: add more scales in SCALES, add slots beyond 4, change voice type.
+ * Face mode  → mood score (-1…+1) maps to vowel openness (sad=mmm, happy=ahhh)
+ * Hand mode  → openness (0…1) maps directly to vowel openness + volume
  */
 
-// ── Scales ────────────────────────────────────────────────────────────────────
+const SLOT_CONFIG = [
+  { degree: 0, octave: -1 }, // root,    bass
+  { degree: 2, octave:  0 }, // third,   mid
+  { degree: 4, octave:  0 }, // fifth,   mid
+  { degree: 6, octave:  1 }, // seventh, high
+];
 
 const SCALES = {
   major:  [0, 2, 4, 5, 7, 9, 11, 12],
@@ -20,55 +22,42 @@ const SCALES = {
   minor:  [0, 2, 3, 5, 7, 8, 10, 12],
 };
 
-function pickScale(avgScore) {
-  if (avgScore >  0.25) return SCALES.major;
-  if (avgScore < -0.25) return SCALES.minor;
+const ROOT_HZ = 130.81; // C3
+
+function pickScale(avg) {
+  if (avg >  0.25) return SCALES.major;
+  if (avg < -0.25) return SCALES.minor;
   return SCALES.dorian;
 }
 
-// ── Slot configuration ────────────────────────────────────────────────────────
-// Each slot: [chord degree index into scale, octave offset]
-// Degree 0=root, 2=third, 4=fifth, 6=seventh
-
-const SLOT_CONFIG = [
-  { degree: 0, octave: -1 }, // slot 0 → root,    bass
-  { degree: 2, octave:  0 }, // slot 1 → third,   mid
-  { degree: 4, octave:  0 }, // slot 2 → fifth,   mid
-  { degree: 6, octave:  1 }, // slot 3 → seventh, high
-];
-
-const ROOT_HZ = 130.81; // C3 as base
-
-function slotFreq(slot, score, scale) {
-  const cfg    = SLOT_CONFIG[slot % 4];
-  const scale7 = scale;
-
-  // score (-1..+1) nudges ±1 scale degree around the chord tone
-  const degreeBase  = cfg.degree;
-  const degreeShift = Math.round(score * 1.2); // gentle nudge
-  const degree      = Math.max(0, Math.min(scale7.length - 1, degreeBase + degreeShift));
-
-  const semitones = scale7[degree] + cfg.octave * 12;
+function slotFreq(slot, scale) {
+  const { degree, octave } = SLOT_CONFIG[slot % 4];
+  const semitones = scale[Math.min(degree, scale.length - 1)] + octave * 12;
   return ROOT_HZ * Math.pow(2, semitones / 12);
 }
 
-// ── HarmonyEngine ─────────────────────────────────────────────────────────────
+// Normalise score to 0–1 openness depending on mode
+function toOpenness(score, mode) {
+  return mode === 'hand'
+    ? Math.max(0, Math.min(1, score))       // hand: already 0–1
+    : (score + 1) / 2;                      // face: -1…+1 → 0…1
+}
 
 export class HarmonyEngine {
   constructor() {
-    this.ctx         = null;
-    this._master     = null;
-    this._reverb     = null;
-    this._voices     = new Map(); // slot → VoiceNodes
-    this._volume     = 1.0;
-    this.mySlot      = null;
+    this.ctx      = null;
+    this._master  = null;
+    this._reverb  = null;
+    this._voices  = new Map();
+    this._volume  = 1.0;
+    this.mySlot   = null;
+    this._lastUsers = [];
   }
 
   start() {
-    this.ctx     = new (window.AudioContext || window.webkitAudioContext)();
+    this.ctx    = new (window.AudioContext || window.webkitAudioContext)();
     this._master = this.ctx.createGain();
     this._master.gain.value = this._volume;
-
     this._reverb = this._makeReverb(2.5);
     this._reverb.connect(this._master);
     this._master.connect(this.ctx.destination);
@@ -78,6 +67,7 @@ export class HarmonyEngine {
     for (const slot of [...this._voices.keys()]) this._removeVoice(slot);
     this.ctx?.close();
     this.ctx = null;
+    this._lastUsers = [];
   }
 
   setVolume(v) {
@@ -85,123 +75,109 @@ export class HarmonyEngine {
     if (this._master) this._master.gain.setTargetAtTime(this._volume, this.ctx.currentTime, 0.05);
   }
 
-  /**
-   * Called whenever the server sends an updated users array.
-   * users: [{ slot, score, mode }, …]
-   */
+  /** Called from WS state updates (all users) */
   updateUsers(users) {
+    this._lastUsers = users;
+    this._apply(users);
+  }
+
+  /** Called locally for immediate feedback on own slot — no WS wait */
+  updateLocal(slot, score, mode) {
+    if (slot === null) return;
+    // Merge local update into last known state
+    const others = this._lastUsers.filter(u => u.slot !== slot);
+    this._apply([...others, { slot, score, mode }]);
+  }
+
+  _apply(users) {
     if (!this.ctx) return;
-    const scale    = pickScale(this._avgScore(users));
+    const scale = pickScale(users.reduce((s, u) => s + u.score, 0) / (users.length || 1));
     const activeSlots = new Set(users.map(u => u.slot));
 
-    // Remove voices for users who left
     for (const slot of this._voices.keys()) {
       if (!activeSlots.has(slot)) this._removeVoice(slot);
     }
-
-    // Add / update voices
     for (const user of users) {
       if (!this._voices.has(user.slot)) this._addVoice(user.slot);
       this._updateVoice(user, scale);
     }
   }
 
-  // ── Internal ───────────────────────────────────────────────────────────────
-
-  _avgScore(users) {
-    if (!users.length) return 0;
-    return users.reduce((s, u) => s + u.score, 0) / users.length;
-  }
-
   _addVoice(slot) {
     const ctx = this.ctx;
 
-    const osc  = ctx.createOscillator();
-    osc.type   = 'sawtooth';
+    const osc = ctx.createOscillator();
+    osc.type  = 'sawtooth';
     osc.frequency.value = 220;
 
-    // Warm low-pass filter
-    const filt = ctx.createBiquadFilter();
-    filt.type  = 'lowpass';
-    filt.frequency.value = 900;
-    filt.Q.value = 0.8;
+    // Two formant bandpass filters — same approach as VoiceSynth
+    const f1 = ctx.createBiquadFilter();
+    f1.type = 'bandpass'; f1.frequency.value = 280; f1.Q.value = 8;
 
-    const dry  = ctx.createGain();
-    dry.gain.value = 0;
+    const f2 = ctx.createBiquadFilter();
+    f2.type = 'bandpass'; f2.frequency.value = 900; f2.Q.value = 10;
 
-    const send = ctx.createGain(); // reverb send
-    send.gain.value = 0;
+    const merge = ctx.createGain();
+    merge.gain.value = 1;
 
-    osc.connect(filt);
-    filt.connect(dry);
-    filt.connect(send);
-    dry.connect(this._master);
-    send.connect(this._reverb);
+    const amp  = ctx.createGain();
+    amp.gain.value = 0;
+
+    const dry  = ctx.createGain(); dry.gain.value  = 0.7;
+    const send = ctx.createGain(); send.gain.value = 0.3;
+
+    osc.connect(f1); osc.connect(f2);
+    f1.connect(merge); f2.connect(merge);
+    merge.connect(amp);
+    amp.connect(dry);  dry.connect(this._master);
+    amp.connect(send); send.connect(this._reverb);
 
     osc.start();
-
-    this._voices.set(slot, { osc, filt, dry, send });
+    this._voices.set(slot, { osc, f1, f2, amp });
   }
 
   _removeVoice(slot) {
     const v = this._voices.get(slot);
     if (!v) return;
     const t = this.ctx.currentTime;
-    v.dry.gain.setTargetAtTime(0, t, 0.3);
-    v.send.gain.setTargetAtTime(0, t, 0.3);
+    v.amp.gain.setTargetAtTime(0, t, 0.3);
     setTimeout(() => { try { v.osc.stop(); } catch (_) {} }, 1000);
     this._voices.delete(slot);
   }
 
   _updateVoice(user, scale) {
-    const v   = this._voices.get(user.slot);
-    if (!v)   return;
-    const ctx = this.ctx;
-    const t   = ctx.currentTime;
-    const sm  = 0.15; // smoothing
+    const v = this._voices.get(user.slot);
+    if (!v) return;
+    const t  = this.ctx.currentTime;
+    const sm = 0.08;
 
-    const freq = slotFreq(user.slot, user.score, scale);
-    v.osc.frequency.setTargetAtTime(freq, t, sm);
+    const open = toOpenness(user.score, user.mode);
 
-    let dryVol, wetVol;
+    // Pitch — slot determines harmony interval
+    v.osc.frequency.setTargetAtTime(slotFreq(user.slot, scale), t, sm);
 
-    if (user.mode === 'hand') {
-      // openness (score 0–1) drives volume directly
-      const open = Math.max(0, user.score);
-      dryVol = Math.pow(open, 1.4) * 0.35;
-      wetVol = Math.pow(open, 1.4) * 0.20;
-      // Filter opens with the mouth
-      v.filt.frequency.setTargetAtTime(400 + open * 2400, t, sm);
-    } else {
-      // Face mode: always audible, intensity from abs(score)
-      const intensity = 0.5 + Math.abs(user.score) * 0.5;
-      dryVol = 0.12 * intensity;
-      wetVol = 0.08 * intensity;
-      v.filt.frequency.setTargetAtTime(800 + Math.abs(user.score) * 600, t, sm);
-    }
+    // Formants — same interpolation as VoiceSynth
+    v.f1.frequency.setTargetAtTime(280 + open * 520,  t, sm); // 280→800
+    v.f2.frequency.setTargetAtTime(900 + open * 500,  t, sm); // 900→1400
+    v.f1.Q.setTargetAtTime(8  - open * 3, t, sm);
+    v.f2.Q.setTargetAtTime(10 - open * 2, t, sm);
 
-    // My own voice is slightly louder so I can hear myself
-    if (user.slot === this.mySlot) {
-      dryVol *= 1.3;
-      wetVol *= 1.3;
-    }
-
-    v.dry.gain.setTargetAtTime(dryVol, t, sm);
-    v.send.gain.setTargetAtTime(wetVol, t, sm);
+    // Volume — near-silent when closed, loud when open
+    let vol = 0.01 + Math.pow(open, 1.4) * 0.6;
+    if (user.slot === this.mySlot) vol *= 1.3;
+    v.amp.gain.setTargetAtTime(vol, t, sm);
   }
 
   _makeReverb(duration) {
-    const ctx     = this.ctx;
-    const len     = ctx.sampleRate * duration;
-    const impulse = ctx.createBuffer(2, len, ctx.sampleRate);
+    const ctx = this.ctx;
+    const len = ctx.sampleRate * duration;
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let c = 0; c < 2; c++) {
-      const d = impulse.getChannelData(c);
-      for (let i = 0; i < len; i++) {
-        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.8);
-      }
+      const d = buf.getChannelData(c);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.8);
     }
     const conv = ctx.createConvolver();
-    conv.buffer = impulse;
+    conv.buffer = buf;
     return conv;
   }
 }
