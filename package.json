@@ -8,6 +8,8 @@
     "build": "node build.js",
     "dev:policy-lines": "npm -w apps/policy-lines run dev",
     "dev:uk-gov-network-graph": "npm -w apps/uk-gov-network-graph run dev",
-    "dev:smile": "npm -w apps/smile run dev"
+    "dev:smile": "npm -w apps/smile run dev",
+    "dev:lottery-sim": "npm -w apps/lottery-sim run dev",
+    "dev:morgan-map": "npm -w apps/morgan-map run dev"
   }
 }
