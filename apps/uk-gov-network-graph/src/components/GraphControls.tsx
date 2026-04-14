@@ -378,9 +378,9 @@ export default function GraphControls({
         </div>
       </div>
 
-      <div className="px-4 py-3 border-t border-border mt-auto">
+      <div className="px-4 py-3 border-t border-border mt-auto flex flex-col gap-1">
         <p className="text-[10px] text-muted-foreground leading-snug">
-          Services data sourced from{" "}
+          Services data:{" "}
           <a
             href="https://govuk-services-list.x-govuk.org/"
             target="_blank"
@@ -388,6 +388,17 @@ export default function GraphControls({
             className="underline hover:text-foreground"
           >
             GOV.UK Services List
+          </a>
+        </p>
+        <p className="text-[10px] text-muted-foreground leading-snug">
+          Policy overlap data:{" "}
+          <a
+            href="https://www.gov.uk/search/policy-papers-and-consultations"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >
+            GOV.UK Search API
           </a>
         </p>
       </div>
