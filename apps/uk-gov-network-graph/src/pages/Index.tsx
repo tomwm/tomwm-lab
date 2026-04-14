@@ -84,7 +84,7 @@ const Index = () => {
         const knownSlugs = new Set(data.nodes.filter((n) => n.type === "organisation").map((n) => n.id));
 
         for (const docType of DOC_TYPES) {
-          const url = `https://www.gov.uk/api/search.json?count=0&keywords=${encodeURIComponent(keywordSearch)}&filter_content_store_document_type[]=${docType}&aggregate_organisations=500`;
+          const url = `https://www.gov.uk/api/search.json?count=0&q=${encodeURIComponent(keywordSearch)}&filter_content_store_document_type[]=${docType}&aggregate_organisations=500`;
           const res = await fetch(url);
           if (!res.ok) continue;
           const json = await res.json();
