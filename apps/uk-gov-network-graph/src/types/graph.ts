@@ -48,11 +48,31 @@ export interface GraphEdge {
   weight?: number;
 }
 
+export interface PolicyOverlapTopic {
+  topic: string;
+  count_a: number;
+  count_b: number;
+  score: number;
+}
+
+export interface PolicyOverlapEdge {
+  source: string;
+  target: string;
+  topics: PolicyOverlapTopic[];
+  total_score: number;
+  topic_count: number;
+}
+
 export interface GraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
   /** Maps lowercase alias → node id for search */
   aliasMap: Map<string, string>;
+  policyOverlapEdges: PolicyOverlapEdge[];
+  /** topic label → orgs active in that topic, sorted by publication count */
+  policyTopicIndex: Record<string, { slug: string; count: number }[]>;
+  /** topic label → GOV.UK taxon content_id */
+  policyTaxonMap: Record<string, string>;
 }
 
 export const DEPENDENCY_TYPES: { type: DependencyType; label: string; color: string }[] = [

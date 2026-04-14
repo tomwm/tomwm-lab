@@ -1,8 +1,10 @@
 import { useEffect, useRef, useCallback, useState, useImperativeHandle, forwardRef } from "react";
 import * as d3 from "d3";
-import type { GraphNode, GraphEdge, DependencyType } from "@/types/graph";
+import type { GraphNode, GraphEdge, DependencyType, PolicyOverlapEdge } from "@/types/graph";
 import { DEPENDENCY_COLOR_MAP } from "@/types/graph";
 import type { Journey } from "@/types/journey";
+
+const POLICY_OVERLAP_COLOR = "hsl(38, 90%, 55%)";
 
 interface NetworkGraphProps {
   nodes: GraphNode[];
@@ -20,6 +22,11 @@ interface NetworkGraphProps {
   spacing: number;
   edgeLength: number;
   activeJourney: Journey | null;
+  policyOverlapEdges: PolicyOverlapEdge[];
+  showPolicyOverlap: boolean;
+  activePolicyTopic: string | null;
+  policyTopicOrgIds: Set<string> | null;
+  onPolicyEdgeSelect: (edge: PolicyOverlapEdge) => void;
 }
 
 export interface NetworkGraphHandle {
@@ -91,6 +98,11 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
   spacing,
   edgeLength,
   activeJourney,
+  policyOverlapEdges,
+  showPolicyOverlap,
+  activePolicyTopic,
+  policyTopicOrgIds,
+  onPolicyEdgeSelect,
 }, ref) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphEdge> | null>(null);
@@ -432,6 +444,9 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       .style("font-family", "'Source Sans 3', sans-serif")
       .style("font-weight", "600");
 
+    // ---- Policy overlap overlay layer ----
+    g.append("g").attr("class", "policy-overlap-edges");
+
     // ---- Journey overlay layer ----
     const journeyEdgeGroup = g.append("g").attr("class", "journey-edges");
     const journeyBadgeGroup = g.append("g").attr("class", "journey-badges");
@@ -445,6 +460,19 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
 
       circles.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
       labels.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
+
+      // Update policy overlap edge positions
+      g.select(".policy-overlap-edges").selectAll("line").each(function (d: any) {
+        const fromNode = simNodes.find((n) => n.id === d.source);
+        const toNode = simNodes.find((n) => n.id === d.target);
+        if (fromNode && toNode) {
+          d3.select(this)
+            .attr("x1", fromNode.x!)
+            .attr("y1", fromNode.y!)
+            .attr("x2", toNode.x!)
+            .attr("y2", toNode.y!);
+        }
+      });
 
       // Update journey edges positions
       journeyEdgeGroup.selectAll("line").each(function (d: any) {
@@ -575,6 +603,72 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
 
   }, [activeJourney]);
 
+  // Render policy overlap edges (separate effect so they update without rebuilding simulation)
+  useEffect(() => {
+    if (!svgRef.current || !gRef.current || !simulationRef.current) return;
+    const g = gRef.current;
+    const simNodes = simulationRef.current.nodes();
+
+    g.select(".policy-overlap-edges").selectAll("*").remove();
+    if (!showPolicyOverlap) return;
+
+    const edgesToShow = activePolicyTopic
+      ? policyOverlapEdges.filter((e) =>
+          e.topics.some((t) => t.topic === activePolicyTopic)
+        )
+      : policyOverlapEdges;
+
+    g.select(".policy-overlap-edges")
+      .selectAll("line")
+      .data(edgesToShow)
+      .join("line")
+      .attr("stroke", POLICY_OVERLAP_COLOR)
+      .attr("stroke-width", (d: any) => Math.max(1, 1 + Math.log2(d.total_score / 10)))
+      .attr("stroke-dasharray", "4,4")
+      .attr("opacity", 0.6)
+      .style("cursor", "pointer")
+      .each(function (d: any) {
+        const fromNode = simNodes.find((n) => n.id === d.source);
+        const toNode = simNodes.find((n) => n.id === d.target);
+        if (fromNode && toNode) {
+          d3.select(this)
+            .attr("x1", fromNode.x!)
+            .attr("y1", fromNode.y!)
+            .attr("x2", toNode.x!)
+            .attr("y2", toNode.y!);
+        }
+      })
+      .on("click", function (event: MouseEvent, d: any) {
+        event.stopPropagation();
+        onPolicyEdgeSelect(d);
+        onNodeSelect(null);
+        onEdgeSelect(null);
+        setTooltip(null);
+      })
+      .on("mouseenter", function (event: MouseEvent, d: any) {
+        const rect = svgRef.current!.getBoundingClientRect();
+        const topTopics = d.topics.slice(0, 4);
+        setTooltip({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top - 10,
+          content: (
+            <div>
+              <div className="font-semibold text-foreground mb-1">Policy overlap</div>
+              {topTopics.map((t: any) => (
+                <div key={t.topic} className="text-xs text-muted-foreground">
+                  {t.topic}: score {t.score}
+                </div>
+              ))}
+              {d.topics.length > 4 && (
+                <div className="text-xs text-muted-foreground">+{d.topics.length - 4} more</div>
+              )}
+            </div>
+          ),
+        });
+      })
+      .on("mouseleave", () => setTooltip(null));
+  }, [showPolicyOverlap, activePolicyTopic, policyOverlapEdges, onPolicyEdgeSelect, onNodeSelect, onEdgeSelect]);
+
   // Update opacity based on selection, search, and journey
   useEffect(() => {
     if (!svgRef.current) return;
@@ -584,6 +678,9 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       if (activeJourney) {
         return journeyNodeIds.has(d.id) ? 1 : 0.3;
       }
+      if (policyTopicOrgIds) {
+        return policyTopicOrgIds.has(d.id) ? 1 : 0.1;
+      }
       const match = searchMatch(d);
       const connected = isConnected(d.id);
       if (!match && searchTerm) return 0.1;
@@ -591,12 +688,14 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       return 1;
     });
 
-    // Add/remove journey ring on nodes
+    // Add/remove journey or policy ring on nodes
     svg.selectAll("circle").attr("stroke", (d: any) => {
       if (activeJourney && journeyNodeIds.has(d.id)) return JOURNEY_COLOR;
+      if (policyTopicOrgIds && policyTopicOrgIds.has(d.id)) return POLICY_OVERLAP_COLOR;
       return "hsl(0,0%,100%)";
     }).attr("stroke-width", (d: any) => {
       if (activeJourney && journeyNodeIds.has(d.id)) return 2.5;
+      if (policyTopicOrgIds && policyTopicOrgIds.has(d.id)) return 2.5;
       return 1.5;
     });
 
@@ -620,7 +719,7 @@ const NetworkGraph = forwardRef<NetworkGraphHandle, NetworkGraphProps>(({
       if (!connected) return 0.15;
       return 1;
     });
-  }, [selectedNode, searchTerm, searchMatch, isConnected, activeJourney, journeyNodeIds]);
+  }, [selectedNode, searchTerm, searchMatch, isConnected, activeJourney, journeyNodeIds, policyTopicOrgIds]);
 
   return (
     <div className="relative w-full h-full">

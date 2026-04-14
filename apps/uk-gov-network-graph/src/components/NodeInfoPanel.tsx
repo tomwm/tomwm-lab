@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { X, ChevronRight, ExternalLink, ChevronDown } from "lucide-react";
-import type { GraphNode, GraphEdge, DependencyType, Dependency } from "@/types/graph";
+import type { GraphNode, GraphEdge, DependencyType, Dependency, PolicyOverlapEdge } from "@/types/graph";
 import { DEPENDENCY_COLOR_MAP, DEPENDENCY_TYPES } from "@/types/graph";
+
+const POLICY_OVERLAP_COLOR = "hsl(38, 90%, 55%)";
 
 interface NodeInfoPanelProps {
   node: GraphNode | null;
   selectedEdge: GraphEdge | null;
+  selectedPolicyEdge: PolicyOverlapEdge | null;
   edges: GraphEdge[];
   nodes: GraphNode[];
+  policyTaxonMap: Record<string, string>;
   isOpen: boolean;
   onClose: () => void;
   onToggle: () => void;
@@ -21,8 +25,10 @@ function getEdgeId(e: GraphEdge, end: "source" | "target"): string {
 export default function NodeInfoPanel({
   node,
   selectedEdge,
+  selectedPolicyEdge,
   edges,
   nodes,
+  policyTaxonMap,
   isOpen,
   onClose,
   onToggle,
@@ -66,7 +72,7 @@ export default function NodeInfoPanel({
     <div className="flex-shrink-0 w-[360px] bg-card border-l border-border flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Node details
+          {selectedPolicyEdge ? "Policy overlap" : selectedEdge ? "Edge details" : "Node details"}
         </span>
         <button
           onClick={onClose}
@@ -78,7 +84,9 @@ export default function NodeInfoPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {selectedEdge ? (
+        {selectedPolicyEdge ? (
+          <PolicyOverlapEdgeContent edge={selectedPolicyEdge} nodeMap={nodeMap} policyTaxonMap={policyTaxonMap} />
+        ) : selectedEdge ? (
           <EdgeContent edge={selectedEdge} nodeMap={nodeMap} />
         ) : !node ? (
           <p className="text-sm text-muted-foreground italic">
@@ -96,6 +104,111 @@ export default function NodeInfoPanel({
         ) : (
           <ServiceContent node={node} nodeMap={nodeMap} edges={edges} />
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ---- Policy Overlap Edge ---- */
+function PolicyOverlapEdgeContent({
+  edge,
+  nodeMap,
+  policyTaxonMap,
+}: {
+  edge: PolicyOverlapEdge;
+  nodeMap: Map<string, GraphNode>;
+  policyTaxonMap: Record<string, string>;
+}) {
+  const sourceName = nodeMap.get(edge.source)?.name || edge.source;
+  const targetName = nodeMap.get(edge.target)?.name || edge.target;
+  const sourceUrl = nodeMap.get(edge.source)?.url;
+  const targetUrl = nodeMap.get(edge.target)?.url;
+
+  function govukSearchUrl(topic: { topic: string }) {
+    const contentId = policyTaxonMap[topic.topic];
+    const sourceSlug = nodeMap.get(edge.source)?.id || edge.source;
+    const targetSlug = nodeMap.get(edge.target)?.id || edge.target;
+    const base = "https://www.gov.uk/search/policy-papers-and-consultations";
+    const params = new URLSearchParams();
+    params.append("organisations[]", sourceSlug);
+    params.append("organisations[]", targetSlug);
+    if (contentId) params.append("level_one_taxon", contentId);
+    else params.append("keywords", topic.topic);
+    return `${base}?${params.toString()}`;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h3 className="text-base font-bold text-foreground leading-tight">Policy overlap</h3>
+        <div className="flex flex-col gap-0.5 mt-1">
+          <div className="flex items-center gap-1.5">
+            {sourceUrl ? (
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer"
+                className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-0.5">
+                {sourceName} <ExternalLink className="h-3 w-3 flex-shrink-0" />
+              </a>
+            ) : (
+              <span className="text-sm font-medium text-foreground">{sourceName}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {targetUrl ? (
+              <a href={targetUrl} target="_blank" rel="noopener noreferrer"
+                className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-0.5">
+                {targetName} <ExternalLink className="h-3 w-3 flex-shrink-0" />
+              </a>
+            ) : (
+              <span className="text-sm font-medium text-foreground">{targetName}</span>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          {edge.topic_count} shared topic{edge.topic_count !== 1 ? "s" : ""} ·{" "}
+          overlap score{" "}
+          <span className="font-semibold text-foreground">{edge.total_score.toLocaleString()}</span>
+        </p>
+      </div>
+
+      <div>
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Shared policy areas
+        </span>
+        <div className="flex flex-col gap-2 mt-2">
+          {edge.topics.map((t) => (
+            <a
+              key={t.topic}
+              href={govukSearchUrl(t)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block border border-border rounded px-3 py-2 hover:bg-muted/50 transition-colors group"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: POLICY_OVERLAP_COLOR }}
+                  />
+                  <span className="text-sm text-foreground font-medium truncate">{t.topic}</span>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className="text-xs font-mono text-muted-foreground">score {t.score}</span>
+                  <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-foreground" />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-1.5 pl-4.5 text-xs text-muted-foreground">
+                <span>
+                  {sourceName.split(" ").slice(0, 3).join(" ")}:{" "}
+                  <span className="text-foreground font-medium">{t.count_a.toLocaleString()}</span> pubs
+                </span>
+                <span>
+                  {targetName.split(" ").slice(0, 3).join(" ")}:{" "}
+                  <span className="text-foreground font-medium">{t.count_b.toLocaleString()}</span> pubs
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import NodeInfoPanel from "@/components/NodeInfoPanel";
 import JourneyDetailPanel from "@/components/JourneyDetailPanel";
 import { buildGraphData } from "@/lib/buildGraphData";
 import { loadJourneys } from "@/lib/loadJourneys";
-import type { GraphNode, GraphEdge, DependencyType } from "@/types/graph";
+import type { GraphNode, GraphEdge, DependencyType, PolicyOverlapEdge } from "@/types/graph";
 import type { Journey } from "@/types/journey";
 
 const DEFAULT_DEP_FILTERS: Record<DependencyType, boolean> = {
@@ -33,6 +33,7 @@ const Index = () => {
   const [showOrganisations, setShowOrganisations] = useState(true);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<GraphEdge | null>(null);
+  const [selectedPolicyEdge, setSelectedPolicyEdge] = useState<PolicyOverlapEdge | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [spacing, setSpacing] = useState(40);
   const [edgeLength, setEdgeLength] = useState(20);
@@ -41,10 +42,90 @@ const Index = () => {
   const [journeyEnabled, setJourneyEnabled] = useState(false);
   const [selectedJourneyId, setSelectedJourneyId] = useState<string | null>(null);
 
+  // Policy overlap state
+  const [showPolicyOverlap, setShowPolicyOverlap] = useState(false);
+  const [activePolicyTopic, setActivePolicyTopic] = useState<string | null>(null);
+  const [keywordSearch, setKeywordSearch] = useState("");
+  const [keywordSearchLoading, setKeywordSearchLoading] = useState(false);
+  const [keywordPolicyEdges, setKeywordPolicyEdges] = useState<PolicyOverlapEdge[]>([]);
+
   const activeJourney: Journey | null = useMemo(() => {
     if (!journeyEnabled || !selectedJourneyId) return null;
     return journeys.find((j) => j.id === selectedJourneyId) || null;
   }, [journeyEnabled, selectedJourneyId, journeys]);
+
+  const policyTopics = useMemo(
+    () => Object.keys(data.policyTopicIndex).sort(),
+    [data.policyTopicIndex]
+  );
+
+  const policyTopicOrgIds = useMemo(() => {
+    if (!activePolicyTopic) return null;
+    const orgs = data.policyTopicIndex[activePolicyTopic] || [];
+    return new Set(orgs.map((o) => o.slug));
+  }, [activePolicyTopic, data.policyTopicIndex]);
+
+  // Live keyword search — hit GOV.UK API and compute overlap dynamically
+  useEffect(() => {
+    if (!keywordSearch.trim()) {
+      setKeywordPolicyEdges([]);
+      setKeywordSearchLoading(false);
+      return;
+    }
+
+    setKeywordSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const DOC_TYPES = [
+          "policy_paper", "consultation", "research_and_analysis",
+          "impact_assessment", "statutory_guidance", "official_statistics",
+        ];
+        const orgCounts: Record<string, number> = {};
+        const knownSlugs = new Set(data.nodes.filter((n) => n.type === "organisation").map((n) => n.id));
+
+        for (const docType of DOC_TYPES) {
+          const url = `https://www.gov.uk/api/search.json?count=0&keywords=${encodeURIComponent(keywordSearch)}&filter_content_store_document_type[]=${docType}&aggregate_organisations=500`;
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const json = await res.json();
+          const orgs = json.aggregates?.organisations?.options || [];
+          for (const org of orgs) {
+            const slug = org.value?.slug;
+            if (slug && knownSlugs.has(slug)) {
+              orgCounts[slug] = (orgCounts[slug] || 0) + (org.documents || 0);
+            }
+          }
+        }
+
+        // Build edges from keyword results
+        const slugs = Object.keys(orgCounts).filter((s) => orgCounts[s] >= 5);
+        const edges: PolicyOverlapEdge[] = [];
+        for (let i = 0; i < slugs.length; i++) {
+          for (let j = i + 1; j < slugs.length; j++) {
+            const a = slugs[i];
+            const b = slugs[j];
+            const score = Math.round(Math.sqrt(orgCounts[a] * orgCounts[b]));
+            if (score < 10) continue;
+            edges.push({
+              source: a,
+              target: b,
+              topics: [{ topic: keywordSearch, count_a: orgCounts[a], count_b: orgCounts[b], score }],
+              total_score: score,
+              topic_count: 1,
+            });
+          }
+        }
+        edges.sort((a, b) => b.total_score - a.total_score);
+        setKeywordPolicyEdges(edges);
+      } catch {
+        setKeywordPolicyEdges([]);
+      } finally {
+        setKeywordSearchLoading(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [keywordSearch, data.nodes]);
 
   // Center graph on first matching node when search changes
   useEffect(() => {
@@ -85,18 +166,28 @@ const Index = () => {
   const handleNodeSelect = useCallback((node: GraphNode | null) => {
     setSelectedNode(node);
     setSelectedEdge(null);
+    setSelectedPolicyEdge(null);
     if (node) setPanelOpen(true);
   }, []);
 
   const handleEdgeSelect = useCallback((edge: GraphEdge | null) => {
     setSelectedEdge(edge);
     setSelectedNode(null);
+    setSelectedPolicyEdge(null);
     if (edge) setPanelOpen(true);
+  }, []);
+
+  const handlePolicyEdgeSelect = useCallback((edge: PolicyOverlapEdge) => {
+    setSelectedPolicyEdge(edge);
+    setSelectedNode(null);
+    setSelectedEdge(null);
+    setPanelOpen(true);
   }, []);
 
   const handleBackgroundClick = useCallback(() => {
     setSelectedNode(null);
     setSelectedEdge(null);
+    setSelectedPolicyEdge(null);
   }, []);
 
   const handleResetLayout = useCallback(() => {
@@ -113,6 +204,12 @@ const Index = () => {
   const handleJourneyOrgClick = useCallback((orgId: string) => {
     graphRef.current?.centerOnNode(orgId);
   }, []);
+
+  // Active policy edges: keyword search takes priority over topic filter
+  const activePolicyEdges = useMemo(() => {
+    if (keywordSearch.trim()) return keywordPolicyEdges;
+    return data.policyOverlapEdges;
+  }, [keywordSearch, keywordPolicyEdges, data.policyOverlapEdges]);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -159,6 +256,20 @@ const Index = () => {
             selectedJourneyId={selectedJourneyId}
             onSelectedJourneyChange={setSelectedJourneyId}
             activeJourney={activeJourney}
+            showPolicyOverlap={showPolicyOverlap}
+            onShowPolicyOverlapChange={setShowPolicyOverlap}
+            policyTopics={policyTopics}
+            activePolicyTopic={activePolicyTopic}
+            onPolicyTopicChange={(topic) => {
+              setActivePolicyTopic(topic);
+              if (topic) setKeywordSearch("");
+            }}
+            keywordSearch={keywordSearch}
+            onKeywordSearchChange={(kw) => {
+              setKeywordSearch(kw);
+              if (kw) setActivePolicyTopic(null);
+            }}
+            keywordSearchLoading={keywordSearchLoading}
           />
         </aside>
 
@@ -180,6 +291,11 @@ const Index = () => {
             spacing={spacing}
             edgeLength={edgeLength}
             activeJourney={activeJourney}
+            policyOverlapEdges={activePolicyEdges}
+            showPolicyOverlap={showPolicyOverlap}
+            activePolicyTopic={keywordSearch.trim() ? keywordSearch : activePolicyTopic}
+            policyTopicOrgIds={policyTopicOrgIds}
+            onPolicyEdgeSelect={handlePolicyEdgeSelect}
           />
         </main>
 
@@ -195,10 +311,12 @@ const Index = () => {
           <NodeInfoPanel
             node={selectedNode}
             selectedEdge={selectedEdge}
+            selectedPolicyEdge={selectedPolicyEdge}
             edges={data.edges}
             nodes={data.nodes}
+            policyTaxonMap={data.policyTaxonMap}
             isOpen={panelOpen}
-            onClose={() => { setPanelOpen(false); setSelectedEdge(null); }}
+            onClose={() => { setPanelOpen(false); setSelectedEdge(null); setSelectedPolicyEdge(null); }}
             onToggle={() => setPanelOpen(true)}
           />
         )}

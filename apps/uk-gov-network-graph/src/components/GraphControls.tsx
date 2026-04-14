@@ -1,4 +1,4 @@
-import { Search, X, ChevronDown, RotateCcw } from "lucide-react";
+import { Search, X, ChevronDown, RotateCcw, Loader2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
   Collapsible,
@@ -33,6 +33,14 @@ interface GraphControlsProps {
   selectedJourneyId: string | null;
   onSelectedJourneyChange: (id: string | null) => void;
   activeJourney: Journey | null;
+  showPolicyOverlap: boolean;
+  onShowPolicyOverlapChange: (value: boolean) => void;
+  policyTopics: string[];
+  activePolicyTopic: string | null;
+  onPolicyTopicChange: (topic: string | null) => void;
+  keywordSearch: string;
+  onKeywordSearchChange: (value: string) => void;
+  keywordSearchLoading: boolean;
 }
 
 export default function GraphControls({
@@ -58,6 +66,14 @@ export default function GraphControls({
   selectedJourneyId,
   onSelectedJourneyChange,
   activeJourney,
+  showPolicyOverlap,
+  onShowPolicyOverlapChange,
+  policyTopics,
+  activePolicyTopic,
+  onPolicyTopicChange,
+  keywordSearch,
+  onKeywordSearchChange,
+  keywordSearchLoading,
 }: GraphControlsProps) {
   const [layoutOpen, setLayoutOpen] = useState(true);
 
@@ -193,6 +209,64 @@ export default function GraphControls({
         onSelectedJourneyChange={onSelectedJourneyChange}
       />
 
+      {/* Policy Topics */}
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          Policy Topics
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={showPolicyOverlap}
+              onChange={(e) => onShowPolicyOverlapChange(e.target.checked)}
+              className="rounded border-input"
+              style={{ accentColor: "hsl(38, 90%, 55%)" }}
+            />
+            Show policy overlaps
+          </label>
+
+          {showPolicyOverlap && (
+            <>
+              {/* Keyword search */}
+              <div className="relative">
+                <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search by keyword…"
+                  value={keywordSearch}
+                  onChange={(e) => onKeywordSearchChange(e.target.value)}
+                  className="w-full pl-7 pr-7 py-1.5 text-xs bg-background border border-input rounded placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                {keywordSearchLoading ? (
+                  <Loader2 className="absolute right-2 top-2 h-3.5 w-3.5 text-muted-foreground animate-spin" />
+                ) : keywordSearch ? (
+                  <button
+                    onClick={() => onKeywordSearchChange("")}
+                    className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+
+              {/* Topic dropdown */}
+              <select
+                value={activePolicyTopic || ""}
+                onChange={(e) => onPolicyTopicChange(e.target.value || null)}
+                disabled={!!keywordSearch}
+                className="w-full text-xs bg-background border border-input rounded px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <option value="">All topics</option>
+                {policyTopics.map((topic) => (
+                  <option key={topic} value={topic}>{topic}</option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Layout controls */}
       <Collapsible open={layoutOpen} onOpenChange={setLayoutOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full group">
@@ -274,6 +348,14 @@ export default function GraphControls({
               {label}
             </div>
           ))}
+          {showPolicyOverlap && (
+            <div className="flex items-center gap-2 mt-1">
+              <svg width="24" height="12" className="flex-shrink-0">
+                <line x1="0" y1="6" x2="24" y2="6" stroke="hsl(38,90%,55%)" strokeWidth="2" strokeDasharray="4,3" />
+              </svg>
+              Policy overlap
+            </div>
+          )}
           {activeJourney && (
             <div className="flex items-center gap-2 mt-1">
               <svg width="24" height="12" className="flex-shrink-0">
