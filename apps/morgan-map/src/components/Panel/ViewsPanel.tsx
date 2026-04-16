@@ -1,6 +1,7 @@
 import { X, SlidersHorizontal } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
 import { NodeType, NODE_TYPE_LABELS } from '../../types';
+import { ListOrdered } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Overlay code kept for future use — not currently exposed in the UI
@@ -16,6 +17,8 @@ export function ViewsPanel() {
   const setFilters = useMapStore((s) => s.setFilters);
   const resetFilters = useMapStore((s) => s.resetFilters);
   const nodes = useMapStore((s) => s.nodes);
+  const showStepNumbers = useMapStore((s) => s.showStepNumbers);
+  const toggleShowStepNumbers = useMapStore((s) => s.toggleShowStepNumbers);
 
   const allOrgs = [...new Set(nodes.map((n) => n.data.organisation).filter(Boolean))].sort();
   const allTags = [...new Set(nodes.flatMap((n) => n.data.tags))].sort();
@@ -87,6 +90,21 @@ export function ViewsPanel() {
         >
           Reset all filters
         </button>
+
+        {/* Display options */}
+        <div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Display</div>
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={showStepNumbers}
+              onChange={toggleShowStepNumbers}
+              className="w-3.5 h-3.5 accent-blue-500 rounded"
+            />
+            <ListOrdered size={12} className="text-gray-500" />
+            <span className="text-xs text-gray-700 group-hover:text-gray-900">Show step numbers</span>
+          </label>
+        </div>
 
         {/* Quick filters */}
         <div>

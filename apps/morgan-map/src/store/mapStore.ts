@@ -144,7 +144,7 @@ export const useMapStore = create<MapStore>((set) => ({
   nodesLocked: false,
   canvasWidth: 1200,
   canvasHeight: 900,
-  showStepNumbers: false,
+  showStepNumbers: true,
 
   onNodesChange: (changes: NodeChange[]) => {
     set((state) => {
