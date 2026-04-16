@@ -63,7 +63,7 @@
     "Position": {
       "type": "object",
       "required": ["x", "y"],
-      "description": "Pixel position on the ReactFlow canvas. This field is ignored on import — position is always derived automatically from automationLevel and criticalityLevel. Do not set this field when generating a map.",
+      "description": "Pixel position on the ReactFlow canvas. This field is ignored on import — position is always derived from automationLevel and criticalityLevel. Do not set this field when generating a map.",
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" }

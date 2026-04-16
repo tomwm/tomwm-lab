@@ -9,6 +9,8 @@ export const NODE_HEIGHT = 70;
 /**
  * Convert normalised 0–1 axis values to React Flow canvas coordinates.
  * React Flow's y axis goes downward, so we invert criticality.
+ * The usable range is [0, w - NODE_WIDTH] × [0, h - NODE_HEIGHT] so that
+ * nodes at the extremes (0 or 1) remain fully visible on the canvas.
  */
 export function axisToCanvas(
   automation: number,
@@ -17,8 +19,8 @@ export function axisToCanvas(
   h: number = CANVAS_HEIGHT
 ) {
   return {
-    x: automation * w - NODE_WIDTH / 2,
-    y: (1 - criticality) * h - NODE_HEIGHT / 2,
+    x: automation * (w - NODE_WIDTH),
+    y: (1 - criticality) * (h - NODE_HEIGHT),
   };
 }
 
@@ -32,7 +34,7 @@ export function canvasToAxis(
   h: number = CANVAS_HEIGHT
 ) {
   return {
-    automation: Math.max(0, Math.min(1, (x + NODE_WIDTH / 2) / w)),
-    criticality: Math.max(0, Math.min(1, 1 - (y + NODE_HEIGHT / 2) / h)),
+    automation: Math.max(0, Math.min(1, x / (w - NODE_WIDTH))),
+    criticality: Math.max(0, Math.min(1, 1 - y / (h - NODE_HEIGHT))),
   };
 }
