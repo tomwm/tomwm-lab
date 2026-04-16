@@ -17,6 +17,7 @@ import {
   Check,
   FolderClosed,
   HelpCircle,
+  ListOrdered,
 } from 'lucide-react';
 import { useMapStore, CANVAS_SIZE_PRESETS } from '../../store/mapStore';
 import { exportToJSON, importFromJSON } from '../../utils/exportImport';
@@ -44,6 +45,8 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
   const canvasHeight = useMapStore((s) => s.canvasHeight);
   const setCanvasSize = useMapStore((s) => s.setCanvasSize);
   const newMap = useMapStore((s) => s.newMap);
+  const showStepNumbers = useMapStore((s) => s.showStepNumbers);
+  const toggleShowStepNumbers = useMapStore((s) => s.toggleShowStepNumbers);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(mapName);
@@ -199,6 +202,18 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
             </>
           )}
         </div>
+
+        {/* Step numbers toggle */}
+        <button
+          onClick={toggleShowStepNumbers}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            showStepNumbers ? 'bg-gray-800 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+          title={showStepNumbers ? 'Hide step numbers' : 'Show step numbers'}
+        >
+          <ListOrdered size={13} />
+          Steps
+        </button>
 
         {/* Filters */}
         <button

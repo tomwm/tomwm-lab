@@ -1,7 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { NodeData, OverlayType } from '../../../types';
 import { useMapStore } from '../../../store/mapStore';
 import { NODE_TYPE_LABELS } from '../../../types';
+import { computeStepNumbers } from '../../../utils/stepNumbers';
 
 interface NodeShellProps {
   id: string;
@@ -24,6 +25,11 @@ export function NodeShell({ id, data, color, icon, onClick }: NodeShellProps) {
   const selectedNodeId = useMapStore((s) => s.selectedNodeId);
   const traceAncestors = useMapStore((s) => s.traceAncestors);
   const traceDescendants = useMapStore((s) => s.traceDescendants);
+  const showStepNumbers = useMapStore((s) => s.showStepNumbers);
+  const nodes = useMapStore((s) => s.nodes);
+  const edges = useMapStore((s) => s.edges);
+  const stepNumbers = useMemo(() => computeStepNumbers(nodes, edges), [nodes, edges]);
+  const stepLabel = showStepNumbers ? stepNumbers[id] : undefined;
 
   const isAncestor = selectedNodeId ? traceAncestors.includes(id) : false;
   const isDescendant = selectedNodeId ? traceDescendants.includes(id) : false;
@@ -76,7 +82,7 @@ export function NodeShell({ id, data, color, icon, onClick }: NodeShellProps) {
           : undefined,
       }}
     >
-      {/* Top row: type badge + risk indicator */}
+      {/* Top row: type badge + indicators */}
       <div className="flex items-center justify-between">
         <div
           className="flex items-center gap-1 rounded px-1 py-0.5"
@@ -96,6 +102,15 @@ export function NodeShell({ id, data, color, icon, onClick }: NodeShellProps) {
           )}
           {!hasCriticalRisk && hasMediumRisk && (
             <span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" title="Medium risk flags" />
+          )}
+          {stepLabel && (
+            <span
+              className="flex items-center justify-center rounded-full bg-gray-800 text-white font-bold leading-none flex-shrink-0"
+              style={{ fontSize: stepLabel.length > 2 ? '7px' : '8px', minWidth: '16px', height: '16px', padding: '0 3px' }}
+              title={`Step ${stepLabel}`}
+            >
+              {stepLabel}
+            </span>
           )}
         </div>
       </div>

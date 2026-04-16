@@ -90,6 +90,10 @@ interface MapStore {
   toggleNodesLocked: () => void;
   setCanvasSize: (width: number, height: number) => void;
   newMap: () => void;
+
+  // Step numbers
+  showStepNumbers: boolean;
+  toggleShowStepNumbers: () => void;
 }
 
 let nodeIdCounter = 100;
@@ -140,6 +144,7 @@ export const useMapStore = create<MapStore>((set) => ({
   nodesLocked: false,
   canvasWidth: 1200,
   canvasHeight: 900,
+  showStepNumbers: false,
 
   onNodesChange: (changes: NodeChange[]) => {
     set((state) => {
@@ -382,6 +387,7 @@ export const useMapStore = create<MapStore>((set) => ({
 
   toggleGridLock: () => set((state) => ({ gridLocked: !state.gridLocked })),
   toggleNodesLocked: () => set((state) => ({ nodesLocked: !state.nodesLocked })),
+  toggleShowStepNumbers: () => set((state) => ({ showStepNumbers: !state.showStepNumbers })),
 
   setCanvasSize: (width, height) => {
     set((state) => {

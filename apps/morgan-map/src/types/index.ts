@@ -53,6 +53,7 @@ export interface NodeData {
   riskFlags: RiskFlag[];
   opportunities: Opportunity[];
   selected?: boolean;
+  stepOverride?: string | null; // null = auto-derive; '' = suppress; any string = manual label
 }
 
 export interface EdgeData {

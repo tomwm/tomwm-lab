@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
+import { computeStepNumbers } from '../../utils/stepNumbers';
 import {
   NodeData,
   NodeType,
@@ -53,12 +54,16 @@ const DEFAULT_FORM: Omit<NodeData, 'riskFlags' | 'opportunities' | 'selected' | 
   notes: '',
   automationLevel: 0.5,
   criticalityLevel: 0.5,
+  stepOverride: null,
 };
 
 export function CreateNodeModal({ onClose, editNodeId }: CreateNodeModalProps) {
   const nodes = useMapStore((s) => s.nodes);
+  const edges = useMapStore((s) => s.edges);
   const addNode = useMapStore((s) => s.addNode);
   const updateNode = useMapStore((s) => s.updateNode);
+  const stepNumbers = useMemo(() => computeStepNumbers(nodes, edges), [nodes, edges]);
+  const autoStep = editNodeId ? stepNumbers[editNodeId] : undefined;
 
   const existingNode = editNodeId ? nodes.find((n) => n.id === editNodeId) : null;
 
@@ -76,6 +81,7 @@ export function CreateNodeModal({ onClose, editNodeId }: CreateNodeModalProps) {
           notes: existingNode.data.notes,
           automationLevel: existingNode.data.automationLevel,
           criticalityLevel: existingNode.data.criticalityLevel,
+          stepOverride: existingNode.data.stepOverride ?? null,
         }
       : { ...DEFAULT_FORM }
   );
@@ -143,6 +149,30 @@ export function CreateNodeModal({ onClose, editNodeId }: CreateNodeModalProps) {
               placeholder="Node title"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
             />
+          </div>
+
+          {/* Step number override */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                Step number
+              </label>
+              {autoStep && (
+                <span className="text-[10px] text-gray-400">
+                  Auto: <span className="font-semibold text-gray-600">{autoStep}</span>
+                </span>
+              )}
+            </div>
+            <input
+              type="text"
+              value={form.stepOverride ?? ''}
+              onChange={(e) => update('stepOverride', e.target.value || null)}
+              placeholder={autoStep ? `Auto (${autoStep}) — type to override, clear to restore` : 'e.g. 1, 2a, 3 — leave blank for auto'}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">
+              Leave blank to auto-derive from flow edges. Set to a space to suppress the number entirely.
+            </p>
           </div>
 
           {/* Node type + Status */}
