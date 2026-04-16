@@ -61,16 +61,24 @@ export function computeStepNumbers(
     if (children.length === 1) {
       visit(children[0]);
     } else if (children.length > 1) {
-      // Strip any trailing letter suffix to get the numeric part for branch labels
-      const mainNum = label.replace(/[a-z]+$/, '');
+      // Use the full current label as prefix so "1a" branches to "1aa"/"1ab",
+      // not "1a"/"1b" (which collides with the current node's label).
       children.forEach((childId, i) => {
-        visit(childId, `${mainNum}${String.fromCharCode(97 + i)}`);
+        visit(childId, `${label}${String.fromCharCode(97 + i)}`);
       });
     }
   }
 
   for (const rootId of roots) {
     visit(rootId);
+  }
+
+  // Handle cycles and subgraphs with no natural root (e.g. reapply loops).
+  // Pick any unvisited flow node as a secondary root and continue numbering.
+  for (const node of nodes) {
+    if (inFlow.has(node.id) && !visited.has(node.id)) {
+      visit(node.id);
+    }
   }
 
   // Apply manual overrides
