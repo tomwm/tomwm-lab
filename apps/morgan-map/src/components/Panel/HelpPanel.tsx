@@ -11,9 +11,9 @@ const EDGE_TYPES = [
 ];
 
 const NODE_TYPES = [
-  { type: 'Decision',  color: '#6366f1', desc: 'A point where a judgment, choice, determination, or classification is made.' },
-  { type: 'Evidence',  color: '#f59e0b', desc: 'Information, signals, rules, records, or inputs used to support or shape a decision.' },
-  { type: 'Execution', color: '#10b981', desc: 'An action that carries out, implements, or operationalises a decision.' },
+  { type: 'Decision',  color: '#f59e0b', desc: 'A point where a judgment, choice, determination, or classification is made.' },
+  { type: 'Evidence',  color: '#14b8a6', desc: 'Information, signals, rules, records, or inputs used to support or shape a decision.' },
+  { type: 'Execution', color: '#7c3aed', desc: 'An action that carries out, implements, or operationalises a decision.' },
   { type: 'Interface', color: '#3b82f6', desc: 'A touchpoint where a person gives input, receives output, or experiences part of the system.' },
 ];
 
