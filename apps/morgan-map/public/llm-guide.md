@@ -45,7 +45,7 @@ The map is designed to help people understand where human judgment still matters
 
 ## Positioning guidance
 
-Set `automationLevel` and `criticalityLevel` as 0–1 values. The app calculates canvas position automatically — you do not need to set `position.x` / `position.y`.
+Set `automationLevel` and `criticalityLevel` as 0–1 values. **Do not set `position.x` / `position.y`** — the app always derives canvas position from the axis values on import. Any position field in the JSON is ignored.
 
 **Automation scale (5 levels):**
 

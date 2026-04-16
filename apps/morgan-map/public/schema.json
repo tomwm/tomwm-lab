@@ -54,7 +54,7 @@
         },
         "position": {
           "$ref": "#/definitions/Position",
-          "description": "Canvas pixel coordinates. Optional — if omitted or both x and y are 0, position is calculated automatically from automationLevel and criticalityLevel."
+          "description": "Canvas pixel coordinates. Do not set this field — the app always derives position automatically from automationLevel and criticalityLevel. Any value here is ignored on import."
         },
         "data": { "$ref": "#/definitions/NodeData" }
       }
@@ -63,7 +63,7 @@
     "Position": {
       "type": "object",
       "required": ["x", "y"],
-      "description": "Pixel position on the ReactFlow canvas. Calculated as: x = automationLevel * 1200 - 80, y = (1 - criticalityLevel) * 900 - 35. You can omit this and let the app derive it automatically.",
+      "description": "Pixel position on the ReactFlow canvas. This field is ignored on import — position is always derived automatically from automationLevel and criticalityLevel. Do not set this field when generating a map.",
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" }
