@@ -68,9 +68,6 @@ export type FilterState = {
   tags: string[];
   criticalityRange: [number, number];
   automationRange: [number, number];
-  showOnlyDecisions: boolean;
-  showOnlyCrossBoundary: boolean;
-  showOnlyHighRisk: boolean;
 };
 
 export type ActivePanel = 'none' | 'node' | 'edge' | 'risks' | 'overlays' | 'filters' | 'views' | 'help';

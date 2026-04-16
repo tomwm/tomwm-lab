@@ -11,9 +11,6 @@ const DEFAULT_FILTERS: FilterState = {
   tags: [],
   criticalityRange: [0, 1],
   automationRange: [0, 1],
-  showOnlyDecisions: false,
-  showOnlyCrossBoundary: false,
-  showOnlyHighRisk: false,
 };
 
 const ALL_OVERLAYS: Record<OverlayType, boolean> = {
@@ -455,23 +452,6 @@ export function getFilteredNodes(
       d.automationLevel > filters.automationRange[1]
     ) {
       visible = false;
-    }
-    if (filters.showOnlyDecisions && d.nodeType !== 'decision') {
-      visible = false;
-    }
-    if (filters.showOnlyHighRisk && d.riskFlags.length === 0) {
-      visible = false;
-    }
-    if (filters.showOnlyCrossBoundary) {
-      const connectedEdges = edges.filter(
-        (e) => e.source === node.id || e.target === node.id
-      );
-      const isCross = connectedEdges.some((e) => {
-        const src = nodes.find((n) => n.id === e.source);
-        const tgt = nodes.find((n) => n.id === e.target);
-        return src && tgt && src.data.organisation !== tgt.data.organisation;
-      });
-      if (!isCross) visible = false;
     }
 
     // Trace fading: if a node is selected, fade nodes not on the path

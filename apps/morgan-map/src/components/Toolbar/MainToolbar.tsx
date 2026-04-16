@@ -64,10 +64,7 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
     filters.criticalityRange[0] > 0 ||
     filters.criticalityRange[1] < 1 ||
     filters.automationRange[0] > 0 ||
-    filters.automationRange[1] < 1 ||
-    filters.showOnlyDecisions ||
-    filters.showOnlyCrossBoundary ||
-    filters.showOnlyHighRisk;
+    filters.automationRange[1] < 1;
 
   const handleExport = () => {
     exportToJSON(mapName, nodes, edges);

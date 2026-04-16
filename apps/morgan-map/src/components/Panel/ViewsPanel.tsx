@@ -30,10 +30,7 @@ export function ViewsPanel() {
     filters.criticalityRange[0] > 0 ||
     filters.criticalityRange[1] < 1 ||
     filters.automationRange[0] > 0 ||
-    filters.automationRange[1] < 1 ||
-    filters.showOnlyDecisions ||
-    filters.showOnlyCrossBoundary ||
-    filters.showOnlyHighRisk;
+    filters.automationRange[1] < 1;
 
   const toggleNodeType = (type: NodeType) => {
     const current = filters.nodeTypes;
@@ -104,28 +101,6 @@ export function ViewsPanel() {
             <ListOrdered size={12} className="text-gray-500" />
             <span className="text-xs text-gray-700 group-hover:text-gray-900">Show step numbers</span>
           </label>
-        </div>
-
-        {/* Quick filters */}
-        <div>
-          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Quick Filters</div>
-          <div className="space-y-1.5">
-            {[
-              { key: 'showOnlyDecisions', label: 'Decisions only' },
-              { key: 'showOnlyCrossBoundary', label: 'Cross-boundary only' },
-              { key: 'showOnlyHighRisk', label: 'High risk only' },
-            ].map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={filters[key as keyof typeof filters] as boolean}
-                  onChange={(e) => setFilters({ [key]: e.target.checked })}
-                  className="w-3.5 h-3.5 accent-blue-500 rounded"
-                />
-                <span className="text-xs text-gray-700 group-hover:text-gray-900">{label}</span>
-              </label>
-            ))}
-          </div>
         </div>
 
         {/* Node types */}
