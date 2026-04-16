@@ -167,7 +167,7 @@ export function HelpPanel() {
           <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
             <div className="flex items-center gap-1.5 flex-wrap">
               <div className="flex flex-col items-center gap-0.5">
-                <div className="px-2.5 py-1 rounded border bg-yellow-50 border-yellow-200 text-[10px] font-semibold text-yellow-700">Evidence</div>
+                <div className="px-2.5 py-1 rounded border text-[10px] font-semibold" style={{ background: '#14b8a611', borderColor: '#14b8a6', color: '#0f766e' }}>Evidence</div>
                 <span className="text-[9px] text-gray-400">case data</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
@@ -175,7 +175,7 @@ export function HelpPanel() {
                 <span className="text-[9px] text-gray-400">informs</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
-                <div className="px-2.5 py-1 rounded border bg-indigo-50 border-indigo-200 text-[10px] font-semibold text-indigo-700">Decision</div>
+                <div className="px-2.5 py-1 rounded border text-[10px] font-semibold" style={{ background: '#f59e0b11', borderColor: '#f59e0b', color: '#b45309' }}>Decision</div>
                 <span className="text-[9px] text-gray-400">eligibility</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
@@ -183,14 +183,14 @@ export function HelpPanel() {
                 <span className="text-[9px] text-gray-400">triggers</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
-                <div className="px-2.5 py-1 rounded border bg-emerald-50 border-emerald-200 text-[10px] font-semibold text-emerald-700">Execution</div>
+                <div className="px-2.5 py-1 rounded border text-[10px] font-semibold" style={{ background: '#7c3aed11', borderColor: '#7c3aed', color: '#6d28d9' }}>Execution</div>
                 <span className="text-[9px] text-gray-400">issue letter</span>
               </div>
             </div>
             <div className="mt-3 flex items-start gap-1.5">
               <svg width="14" height="22" className="flex-shrink-0 mt-1"><line x1="7" y1="0" x2="7" y2="22" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="3 2"/></svg>
               <div>
-                <span className="inline-flex px-2.5 py-0.5 rounded border bg-blue-50 border-blue-200 text-[10px] font-semibold text-blue-700">Interface</span>
+                <span className="inline-flex px-2.5 py-0.5 rounded border text-[10px] font-semibold" style={{ background: '#3b82f611', borderColor: '#3b82f6', color: '#1d4ed8' }}>Interface</span>
                 <span className="text-[10px] text-gray-400 ml-1.5">— captures input, presents outcome</span>
               </div>
             </div>
