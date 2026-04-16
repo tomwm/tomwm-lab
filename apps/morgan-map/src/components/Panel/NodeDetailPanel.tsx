@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, AlertTriangle, Lightbulb, Tag, Trash2, Pencil, Check } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
 import { NodeData, NodeType, Status, NODE_TYPE_LABELS, AUTOMATION_LABELS, CRITICALITY_LABELS } from '../../types';
+import { computeStepNumbers } from '../../utils/stepNumbers';
 
 function getAutomationLabel(value: number): string {
   let closest = AUTOMATION_LABELS[0];
@@ -75,7 +76,10 @@ export function NodeDetailPanel() {
   const [draft, setDraft] = useState<Partial<NodeData>>({});
 
   const node = nodes.find((n) => n.id === selectedNodeId);
+  const stepNumbers = useMemo(() => computeStepNumbers(nodes, edges), [nodes, edges]);
   if (!node) return null;
+
+  const autoStep = stepNumbers[node.id];
 
   const d = node.data;
   const color = NODE_TYPE_COLOURS[d.nodeType];
@@ -208,6 +212,18 @@ export function NodeDetailPanel() {
                 onChange={(e) => set('title', e.target.value)}
                 placeholder="Node title"
               />
+            </div>
+
+            {/* Step override */}
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Step number</label>
+              <input
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                value={v.stepOverride ?? ''}
+                onChange={(e) => set('stepOverride', e.target.value || null)}
+                placeholder={autoStep ? `Auto: ${autoStep} — leave blank to keep` : 'e.g. 1, 2a, 3b (leave blank for auto)'}
+              />
+              <p className="text-[10px] text-gray-400 mt-1">Leave blank to use the auto-derived step number. Clear to remove any override.</p>
             </div>
 
             {/* Node Type + Status */}
@@ -376,8 +392,21 @@ export function NodeDetailPanel() {
                 </span>
               </div>
               <div className="bg-gray-50 rounded-lg p-2.5">
-                <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Node Type</div>
-                <span className="text-[11px] font-medium text-gray-700">{NODE_TYPE_LABELS[d.nodeType]}</span>
+                <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Step</div>
+                <div className="flex items-center gap-1.5">
+                  {autoStep ? (
+                    <span className="flex items-center justify-center rounded-full bg-gray-800 text-white font-bold" style={{ fontSize: autoStep.length > 2 ? '8px' : '9px', minWidth: '18px', height: '18px', padding: '0 3px' }}>
+                      {autoStep}
+                    </span>
+                  ) : null}
+                  <span className="text-[11px] text-gray-500">
+                    {d.stepOverride != null && d.stepOverride.trim() !== ''
+                      ? 'override'
+                      : autoStep
+                      ? 'auto'
+                      : '—'}
+                  </span>
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-2.5">
                 <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Owner</div>
