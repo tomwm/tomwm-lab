@@ -89,7 +89,7 @@ function MapCanvasInner() {
   const addNode = useMapStore((s) => s.addNode);
   const updateNodePosition = useMapStore((s) => s.updateNodePosition);
 
-  const filteredNodes = getFilteredNodes(nodes, filters, edges, selectedNodeId, traceAncestors, traceDescendants);
+  const filteredNodes = getFilteredNodes(nodes, filters, selectedNodeId, traceAncestors, traceDescendants);
   const displayNodes = nodesLocked
     ? filteredNodes.map((n) => ({ ...n, draggable: false }))
     : filteredNodes;

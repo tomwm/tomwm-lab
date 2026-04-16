@@ -419,7 +419,6 @@ export const useMapStore = create<MapStore>((set) => ({
 export function getFilteredNodes(
   nodes: Node<NodeData>[],
   filters: FilterState,
-  edges: Edge<EdgeData>[],
   selectedNodeId?: string | null,
   traceAncestors?: string[],
   traceDescendants?: string[]
