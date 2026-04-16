@@ -3,7 +3,6 @@ import { Node, Edge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange 
 import { NodeData, EdgeData, ActivePanel, OverlayType, FilterState, NodeType } from '../types';
 import { SEED_NODES, SEED_EDGES } from '../data/seedData';
 import { axisToCanvas, canvasToAxis, NODE_WIDTH, NODE_HEIGHT } from '../utils/coordinates';
-import { computeAllRiskFlags } from '../utils/riskAnalysis';
 
 const DEFAULT_FILTERS: FilterState = {
   nodeTypes: [],
@@ -79,7 +78,6 @@ interface MapStore {
   // Data
   loadSeedData: () => void;
   importMap: (data: { nodes: Node<NodeData>[]; edges: Edge<EdgeData>[] }) => void;
-  computeRiskFlags: () => void;
 
   // Canvas
   triggerFitView: () => void;
@@ -179,11 +177,11 @@ export const useMapStore = create<MapStore>((set) => ({
         id,
         type: data.nodeType,
         position,
-        data: { ...data, riskFlags: [], opportunities: [], selected: false },
+        data: { ...data, selected: false },
         draggable: true,
       };
       const nodes = [...state.nodes, newNode];
-      return { nodes: computeAllRiskFlags(nodes, state.edges) };
+      return { nodes };
     });
   },
 
@@ -200,7 +198,7 @@ export const useMapStore = create<MapStore>((set) => ({
           data: newData,
         };
       });
-      return { nodes: computeAllRiskFlags(nodes, state.edges) };
+      return { nodes };
     });
   },
 
@@ -225,14 +223,14 @@ export const useMapStore = create<MapStore>((set) => ({
       const edges = state.edges.filter((e) => e.source !== id && e.target !== id);
       const selectedNodeId = state.selectedNodeId === id ? null : state.selectedNodeId;
       const activePanel = state.selectedNodeId === id ? 'none' : state.activePanel;
-      return { nodes: computeAllRiskFlags(nodes, edges), edges, selectedNodeId, activePanel };
+      return { nodes, edges, selectedNodeId, activePanel };
     });
   },
 
   addEdge: (edge) => {
     set((state) => {
       const edges = [...state.edges, edge];
-      return { edges, nodes: computeAllRiskFlags(state.nodes, edges) };
+      return { edges };
     });
   },
 
@@ -251,7 +249,7 @@ export const useMapStore = create<MapStore>((set) => ({
       const edges = state.edges.filter((e) => e.id !== id);
       const selectedEdgeId = state.selectedEdgeId === id ? null : state.selectedEdgeId;
       const activePanel = state.selectedEdgeId === id ? 'none' : state.activePanel;
-      return { edges, nodes: computeAllRiskFlags(state.nodes, edges), selectedEdgeId, activePanel };
+      return { edges, selectedEdgeId, activePanel };
     });
   },
 
@@ -321,7 +319,7 @@ export const useMapStore = create<MapStore>((set) => ({
 
   loadSeedData: () => {
     set({
-      nodes: computeAllRiskFlags(SEED_NODES, SEED_EDGES),
+      nodes: SEED_NODES,
       edges: SEED_EDGES,
       selectedNodeId: null,
       selectedEdgeId: null,
@@ -363,19 +361,13 @@ export const useMapStore = create<MapStore>((set) => ({
       });
 
       return {
-        nodes: computeAllRiskFlags(nodes, data.edges),
+        nodes,
         edges: data.edges,
         selectedNodeId: null,
         selectedEdgeId: null,
         activePanel: 'none',
       };
     });
-  },
-
-  computeRiskFlags: () => {
-    set((state) => ({
-      nodes: computeAllRiskFlags(state.nodes, state.edges),
-    }));
   },
 
   triggerFitView: () => {

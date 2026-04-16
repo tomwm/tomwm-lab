@@ -1,7 +1,6 @@
 import { Map, Plus, BookOpen } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
 import { SEED_NODES, SEED_EDGES } from '../../data/seedData';
-import { computeAllRiskFlags } from '../../utils/riskAnalysis';
 
 interface WelcomeModalProps {
   onDismiss: () => void;
@@ -13,7 +12,7 @@ export function WelcomeModal({ onDismiss }: WelcomeModalProps) {
 
   const handleLoadExample = () => {
     importMap({
-      nodes: computeAllRiskFlags(SEED_NODES, SEED_EDGES),
+      nodes: SEED_NODES,
       edges: SEED_EDGES,
     });
     setMapName('Universal Credit Claim Journey');

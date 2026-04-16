@@ -163,8 +163,6 @@ function MapCanvasInner() {
         automationLevel: automation,
         criticalityLevel: criticality,
         overlays: {},
-        riskFlags: [],
-        opportunities: [],
       });
     },
     [screenToFlowPosition, addNode, canvasWidth, canvasHeight]

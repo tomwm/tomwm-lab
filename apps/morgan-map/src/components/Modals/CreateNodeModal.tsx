@@ -42,7 +42,7 @@ function getCriticalityLabel(value: number): string {
   return closest.label;
 }
 
-const DEFAULT_FORM: Omit<NodeData, 'riskFlags' | 'opportunities' | 'selected' | 'overlays'> = {
+const DEFAULT_FORM: Omit<NodeData, 'selected' | 'overlays'> = {
   title: '',
   description: '',
   nodeType: 'execution',
@@ -111,7 +111,7 @@ export function CreateNodeModal({ onClose, editNodeId }: CreateNodeModalProps) {
     if (editNodeId) {
       updateNode(editNodeId, { ...form, overlays: existingNode?.data.overlays ?? {} });
     } else {
-      addNode({ ...form, overlays: {}, riskFlags: [], opportunities: [] });
+      addNode({ ...form, overlays: {} });
     }
     onClose();
   };

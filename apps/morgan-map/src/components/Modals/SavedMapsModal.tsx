@@ -3,7 +3,6 @@ import { X, FolderOpen, Trash2, Clock, Database, BookOpen, Star } from 'lucide-r
 import { listSavedMaps, deleteSavedMap, formatSavedAt, SavedMap } from '../../utils/localSaves';
 import { useMapStore } from '../../store/mapStore';
 import { SEED_NODES, SEED_EDGES } from '../../data/seedData';
-import { computeAllRiskFlags } from '../../utils/riskAnalysis';
 
 interface SavedMapsModalProps {
   onClose: () => void;
@@ -29,7 +28,7 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
   };
 
   const handleLoadExample = () => {
-    importMap({ nodes: computeAllRiskFlags(SEED_NODES, SEED_EDGES), edges: SEED_EDGES });
+    importMap({ nodes: SEED_NODES, edges: SEED_EDGES });
     setMapName('Universal Credit Claim Journey');
     setTimeout(() => triggerFitView(), 100);
     onClose();

@@ -21,22 +21,6 @@ export type OverlayType =
 
 export type Status = 'active' | 'planned' | 'deprecated' | 'review';
 
-export type Severity = 'low' | 'medium' | 'high' | 'critical';
-
-export interface RiskFlag {
-  id: string;
-  type: string;
-  description: string;
-  severity: Severity;
-}
-
-export interface Opportunity {
-  id: string;
-  type: string;
-  description: string;
-  impact: 'low' | 'medium' | 'high';
-}
-
 export interface NodeData {
   title: string;
   description: string;
@@ -50,8 +34,6 @@ export interface NodeData {
   automationLevel: number; // 0–1 (x axis — extent of automation)
   criticalityLevel: number; // 0–1 (y axis — trust required)
   overlays: Partial<Record<OverlayType, boolean>>;
-  riskFlags: RiskFlag[];
-  opportunities: Opportunity[];
   selected?: boolean;
   stepOverride?: string | null; // null = auto-derive; '' = suppress; any string = manual label
 }

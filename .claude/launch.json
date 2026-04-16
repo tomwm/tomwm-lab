@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "morgan-map",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:morgan-map"],
+      "port": 5174
+    },
+    {
+      "name": "lottery-sim",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:lottery-sim"],
+      "port": 8082
+    },
+    {
+      "name": "samtrees",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "8085", "apps/samtrees"],
+      "port": 8085
+    }
+  ]
+}

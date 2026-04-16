@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { X, AlertTriangle, Lightbulb, Tag, Trash2, Pencil, Check } from 'lucide-react';
+import { X, Tag, Trash2, Pencil, Check } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
 import { NodeData, NodeType, Status, NODE_TYPE_LABELS, AUTOMATION_LABELS, CRITICALITY_LABELS } from '../../types';
 import { computeStepNumbers } from '../../utils/stepNumbers';
@@ -24,18 +24,6 @@ function getCriticalityLabel(value: number): string {
   return closest.label;
 }
 
-const SEVERITY_COLOURS = {
-  critical: 'bg-red-100 text-red-700 border-red-200',
-  high: 'bg-orange-100 text-orange-700 border-orange-200',
-  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  low: 'bg-gray-100 text-gray-600 border-gray-200',
-};
-
-const IMPACT_COLOURS = {
-  high: 'bg-green-100 text-green-700 border-green-200',
-  medium: 'bg-blue-100 text-blue-700 border-blue-200',
-  low: 'bg-gray-100 text-gray-600 border-gray-200',
-};
 
 const STATUS_COLOURS: Record<Status, string> = {
   active: 'bg-green-100 text-green-700',
@@ -496,39 +484,6 @@ export function NodeDetailPanel() {
               </div>
             )}
 
-            {/* Risk Flags */}
-            {d.riskFlags.length > 0 && (
-              <div>
-                <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                  <AlertTriangle size={10} className="text-red-400" /> Risk Flags ({d.riskFlags.length})
-                </div>
-                <div className="space-y-1.5">
-                  {d.riskFlags.map((flag) => (
-                    <div key={flag.id} className={`flex items-start gap-2 rounded-lg p-2 text-[11px] border ${SEVERITY_COLOURS[flag.severity]}`}>
-                      <span className="font-bold uppercase text-[9px] mt-0.5 flex-shrink-0">{flag.severity}</span>
-                      <span className="leading-snug">{flag.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Opportunities */}
-            {d.opportunities.length > 0 && (
-              <div>
-                <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                  <Lightbulb size={10} className="text-green-500" /> Opportunities ({d.opportunities.length})
-                </div>
-                <div className="space-y-1.5">
-                  {d.opportunities.map((opp) => (
-                    <div key={opp.id} className={`flex items-start gap-2 rounded-lg p-2 text-[11px] border ${IMPACT_COLOURS[opp.impact]}`}>
-                      <span className="font-bold uppercase text-[9px] mt-0.5 flex-shrink-0">{opp.impact}</span>
-                      <span className="leading-snug">{opp.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>

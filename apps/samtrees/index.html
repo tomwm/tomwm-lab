@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SamTRees</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #060c06; }
+canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+#overlay {
+  position: fixed; inset: 0; pointer-events: none;
+  display: flex; flex-direction: column;
+  justify-content: space-between; align-items: center;
+  padding: 22px 20px 20px;
+}
+#toolbar-wrap {
+  position: fixed;
+  top: 20px; right: 20px;
+  pointer-events: all;
+}
+#title {
+  color: rgba(130,210,130,0.18);
+  font-family: Georgia, serif; font-size: 19px;
+  letter-spacing: 10px; text-transform: uppercase; font-weight: normal;
+}
+#toolbar {
+  display: flex; gap: 6px;
+  background: rgba(0,0,0,0.5);
+  padding: 7px 10px; border-radius: 40px;
+  border: 1px solid rgba(120,200,120,0.15);
+  backdrop-filter: blur(8px);
+}
+#toolbar button {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(120,200,120,0.18);
+  background: transparent; cursor: pointer;
+  font-size: 19px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; outline: none; position: relative;
+}
+#toolbar button:hover { background: rgba(120,200,120,0.1); border-color: rgba(120,200,120,0.4); }
+#toolbar button.active {
+  background: rgba(120,200,120,0.2);
+  border-color: rgba(140,230,140,0.65);
+  box-shadow: 0 0 12px rgba(120,220,120,0.25);
+}
+#hint {
+  color: rgba(130,210,130,0.2); font-family: Georgia, serif;
+  font-size: 11px; letter-spacing: 3px; text-align: center;
+  transition: opacity 0.4s;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="toolbar-wrap">
+  <div id="toolbar">
+    <button data-mode="draw"  class="active" title="Draw (D)">✏️</button>
+    <button data-mode="wind"  title="Wind (W)">💨</button>
+    <button data-mode="grow"  title="Grow (G)">🌿</button>
+    <button data-mode="shake" title="Shake (S)">🫨</button>
+    <button data-mode="water" title="Water (Q)">💧</button>
+  </div>
+</div>
+<div id="overlay">
+  <div id="title">SamTRees</div>
+  <div id="hint">draw a branch · scroll to zoom · right-drag to pan</div>
+</div>
+<script>
+'use strict';
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+// ─── Camera ───────────────────────────────────────────────────────────────────
+const cam = { x: 0, y: 0, scale: 1 };
+
+// ─── Mode ─────────────────────────────────────────────────────────────────────
+let mode = 'draw';
+const HINTS = {
+  draw:  'draw a branch · snap to tips · scroll to zoom',
+  wind:  'drag near branches to blow leaves',
+  grow:  'stroke to grow branches · fast = large · slow = small',
+  shake: 'hold on a branch to shake loose the leaves',
+  water: 'touch and hold on a branch · it grows on its own',
+};
+const CURSORS = { draw:'crosshair', wind:'cell', grow:'copy', shake:'move', water:'cell' };
+
+// ─── Global state ─────────────────────────────────────────────────────────────
+const branches  = [];
+const particles = [];   // falling leaves
+
+let isPointerDown = false;
+let isDrawing     = false;
+let currentPts    = [];
+
+let isPanning  = false;
+let panLast    = null;
+let hoverSnap  = null;
+
+// per-mode tracking
+let lastWorldPos  = null;  // updated every pointermove
+let lastWindPos   = null;
+let growLastPos   = null;
+let growLastTime  = 0;
+let growLastSpeed = 0.3;
+let growDist      = 0;
+let growSide      = 1;
+let waterOn            = false;
+let waterOrigin        = null;  // {x, y, parentAngle}
+let waterBranches      = [];    // [{raw:[...], angle}]
+let waterStartTime     = 0;
+let waterLastSpawn     = 0;
+
+// touch
+const activeTouches = new Map();
+let pinchState = null;
+let lastTouchScreen = { x: 0, y: 0 };
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const lerp  = (a,b,t) => a + (b-a) * clamp(t,0,1);
+const hypot = (dx,dy) => Math.sqrt(dx*dx + dy*dy);
+const pdist = (p,q)   => hypot(q.x-p.x, q.y-p.y);
+
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize);
+resize();
+
+function s2w(sx, sy) {
+  return { x: (sx - canvas.width*0.5 - cam.x) / cam.scale,
+           y: (sy - canvas.height*0.5 - cam.y) / cam.scale };
+}
+
+// ─── Path maths ───────────────────────────────────────────────────────────────
+function catmullRom(pts, segs=6) {
+  if (pts.length < 2) return pts.slice();
+  const out = [];
+  for (let i = 0; i < pts.length-1; i++) {
+    const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(pts.length-1,i+2)];
+    for (let s=0; s<segs; s++) {
+      const t=s/segs, t2=t*t, t3=t2*t;
+      out.push({
+        x:.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+        y:.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
+      });
+    }
+  }
+  out.push({...pts[pts.length-1]});
+  return out;
+}
+
+function pathLen(pts) {
+  let l=0; for (let i=1;i<pts.length;i++) l+=pdist(pts[i],pts[i-1]); return l;
+}
+
+function pointAt(pts, t, len) {
+  const tgt=t*len; let acc=0;
+  for (let i=1;i<pts.length;i++) {
+    const d=pdist(pts[i],pts[i-1]);
+    if (acc+d>=tgt) {
+      const f=d>0?(tgt-acc)/d:0, dx=pts[i].x-pts[i-1].x, dy=pts[i].y-pts[i-1].y;
+      return {x:pts[i-1].x+dx*f, y:pts[i-1].y+dy*f, angle:Math.atan2(dy,dx)};
+    }
+    acc+=d;
+  }
+  const n=pts.length;
+  return {...pts[n-1], angle:n>1?Math.atan2(pts[n-1].y-pts[n-2].y,pts[n-1].x-pts[n-2].x):0};
+}
+
+// nearest world-point on a branch to (wx,wy); returns {pt,posT,dist} or null
+function nearestOnBranch(b, wx, wy, maxDist) {
+  let bestD=Infinity, bestPt=null, bestT=0, acc=0;
+  const {pts,len}=b;
+  for (let i=1;i<pts.length;i++) {
+    const dx=pts[i].x-pts[i-1].x, dy=pts[i].y-pts[i-1].y, d=hypot(dx,dy);
+    if (d>0) {
+      const t=clamp(((wx-pts[i-1].x)*dx+(wy-pts[i-1].y)*dy)/(d*d),0,1);
+      const px=pts[i-1].x+dx*t, py=pts[i-1].y+dy*t;
+      const dist=hypot(wx-px,wy-py);
+      if (dist<bestD) { bestD=dist; bestPt={x:px,y:py,angle:Math.atan2(dy,dx)}; bestT=(acc+t*d)/len; }
+    }
+    acc+=d;
+  }
+  return bestD<maxDist ? {pt:bestPt, posT:bestT, dist:bestD} : null;
+}
+
+// ─── Palette ──────────────────────────────────────────────────────────────────
+const BARKS  = ['#1c0d04','#2d1508','#3d1f0a','#4a280d','#5c3515','#6e4020'];
+const LEAVES = [
+  '#1a6b1a','#2a8a2a','#38aa38','#4dc44d','#63cf63','#80e080','#98ee98',
+  '#5aaa10','#78c820','#98e030','#b0ee40',
+  '#c8a400','#d47400','#c85c10',
+  '#288060','#38a070','#50c87a',
+];
+function rndLeafCol() { return LEAVES[Math.floor(Math.random()*LEAVES.length)]; }
+
+// ─── Snap ─────────────────────────────────────────────────────────────────────
+const SNAP_PX = 22;
+function findSnapTip(wx, wy) {
+  const r=SNAP_PX/cam.scale; let best=null, bestD=Infinity;
+  for (const b of branches) {
+    if (b.progress<0.95) continue;
+    const tip=b.pts[b.pts.length-1], d=pdist({x:wx,y:wy},tip);
+    if (d<r && d<bestD) { best=tip; bestD=d; }
+  }
+  return best;
+}
+
+// ─── Particles ────────────────────────────────────────────────────────────────
+function spawnLeaf(x,y,vx,vy,size,col,angle) {
+  particles.push({x,y,vx,vy,angle,va:(Math.random()-0.5)*0.008,
+    size,col,life:1,decay:0.003+Math.random()*0.004});
+}
+
+function updateParticles(dt) {
+  const g = 0.00008/cam.scale;
+  for (let i=particles.length-1;i>=0;i--) {
+    const p=particles[i];
+    p.vy+=g*dt; p.vx*=0.994; p.vy*=0.997;
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.angle+=p.va;
+    p.life-=p.decay*dt;
+    if (p.life<=0) particles.splice(i,1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    const s=p.size*Math.min(1,p.life*4);
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.angle);
+    ctx.globalAlpha=Math.min(p.life,1)*0.85;
+    ctx.beginPath();
+    ctx.moveTo(0,-s); ctx.bezierCurveTo(s*0.58,-s*0.42,s*0.58,s*0.42,0,s);
+    ctx.bezierCurveTo(-s*0.58,s*0.42,-s*0.58,-s*0.42,0,-s);
+    ctx.fillStyle=p.col; ctx.fill(); ctx.restore();
+  }
+}
+
+// ─── Branch creation ──────────────────────────────────────────────────────────
+function createBranch(rawPts, speedOverride, leafCountOverride) {
+  let totD=0, totT=0;
+  for (let i=1;i<rawPts.length;i++) { totD+=pdist(rawPts[i],rawPts[i-1]); totT+=rawPts[i].t-rawPts[i-1].t; }
+  const speed     = speedOverride!==undefined ? speedOverride : (totT>20 ? totD/totT : 0.3);
+  const leafCount = leafCountOverride!==undefined ? leafCountOverride : Math.round(lerp(3,80,clamp(speed/0.8,0,1)));
+
+  const pts  = catmullRom(rawPts,6);
+  const len  = pathLen(pts);
+  const s    = cam.scale;
+  const baseW= clamp(len*0.028, 1.5/s, 22/s);
+  const tipW = Math.max(0.4/s, baseW*0.07);
+  const bark = BARKS[Math.floor(Math.random()*BARKS.length)];
+
+  const leaves=[];
+  for (let i=0;i<leafCount;i++) {
+    const posT =Math.pow(Math.random(),0.65);
+    const pt   =pointAt(pts,posT,len);
+    const side =Math.random()>0.5?1:-1;
+    const perp =pt.angle+Math.PI*0.5*side;
+    const spread=lerp(baseW*3,baseW*0.6,posT)+5/s;
+    const off  =(Math.random()*0.7+0.3)*spread;
+    const angle=pt.angle+(Math.random()-0.5)*1.6+side*0.25;
+    const size =(lerp(4,17,Math.random())/s)*lerp(1.4,0.5,posT);
+    leaves.push({x:pt.x+Math.cos(perp)*off, y:pt.y+Math.sin(perp)*off,
+                 angle,size,col:rndLeafCol(),posT,p:0,windDX:0,windDY:0});
+  }
+  leaves.sort((a,b)=>a.posT-b.posT);
+
+  return {pts,len,baseW,tipW,bark,leaves,progress:0,shakeAmp:0,shakeStart:0,shakeFading:false};
+}
+
+// ─── Leaf drawing ─────────────────────────────────────────────────────────────
+function drawLeaf(leaf) {
+  if (leaf.p<0.01) return;
+  const s=leaf.size*leaf.p;
+  ctx.save();
+  ctx.translate(leaf.x+(leaf.windDX||0), leaf.y+(leaf.windDY||0));
+  ctx.rotate(leaf.angle);
+  ctx.globalAlpha=0.82*Math.min(1,leaf.p*1.4);
+  ctx.beginPath();
+  ctx.moveTo(0,-s); ctx.bezierCurveTo(s*0.58,-s*0.42,s*0.58,s*0.42,0,s);
+  ctx.bezierCurveTo(-s*0.58,s*0.42,-s*0.58,-s*0.42,0,-s);
+  ctx.fillStyle=leaf.col; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,-s*0.82); ctx.lineTo(0,s*0.82);
+  ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=Math.max(0.3,s*0.045);
+  ctx.globalAlpha=0.25*leaf.p; ctx.stroke();
+  ctx.restore();
+}
+
+// ─── Branch drawing ───────────────────────────────────────────────────────────
+function drawBranch(b, now) {
+  const {pts,len,baseW,tipW,bark,leaves,progress}=b;
+  if (pts.length<2||progress<=0) return;
+
+  // shake offset (translates whole branch)
+  let sx=0, sy=0;
+  if (b.shakeAmp>0.001/cam.scale) {
+    const t=(now-b.shakeStart)/60;
+    sx=b.shakeAmp*Math.sin(t*2.4);
+    sy=b.shakeAmp*Math.cos(t*1.7)*0.3;
+  }
+
+  ctx.save();
+  if (sx||sy) ctx.translate(sx,sy);
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=bark;
+
+  const drawLen=len*progress; let acc=0;
+  for (let i=1;i<pts.length;i++) {
+    const d=pdist(pts[i],pts[i-1]);
+    if (acc>=drawLen) break;
+    const seg=Math.min(d,drawLen-acc), f=d>0?seg/d:0;
+    const ex=pts[i-1].x+(pts[i].x-pts[i-1].x)*f;
+    const ey=pts[i-1].y+(pts[i].y-pts[i-1].y)*f;
+    ctx.lineWidth=lerp(baseW,tipW,(acc+seg*0.5)/len);
+    ctx.beginPath(); ctx.moveTo(pts[i-1].x,pts[i-1].y); ctx.lineTo(ex,ey); ctx.stroke();
+    acc+=d;
+  }
+
+  for (const leaf of leaves) {
+    if (leaf.posT<=progress && !leaf.shed) leaf.p=Math.min(1,leaf.p+0.055);
+    drawLeaf(leaf);
+  }
+  ctx.restore();
+}
+
+// ─── Snap indicators ──────────────────────────────────────────────────────────
+function drawSnapIndicators() {
+  if (isPanning || mode!=='draw') return;
+  for (const b of branches) {
+    if (b.progress<0.95) continue;
+    const tip=b.pts[b.pts.length-1];
+    if (!hoverSnap||pdist(tip,hoverSnap)>0.01) {
+      ctx.beginPath(); ctx.arc(tip.x,tip.y,3/cam.scale,0,Math.PI*2);
+      ctx.fillStyle='rgba(160,240,160,0.18)'; ctx.fill();
+    }
+  }
+  if (hoverSnap) {
+    ctx.beginPath(); ctx.arc(hoverSnap.x,hoverSnap.y,9/cam.scale,0,Math.PI*2);
+    ctx.strokeStyle='rgba(180,255,180,0.7)'; ctx.lineWidth=1.5/cam.scale; ctx.stroke();
+    ctx.beginPath(); ctx.arc(hoverSnap.x,hoverSnap.y,2.5/cam.scale,0,Math.PI*2);
+    ctx.fillStyle='rgba(200,255,200,0.9)'; ctx.fill();
+  }
+}
+
+function drawStrokePreview() {
+  if (!isDrawing||currentPts.length<2) return;
+  ctx.save(); ctx.strokeStyle='rgba(140,230,140,0.22)'; ctx.lineWidth=2/cam.scale;
+  ctx.lineCap='round'; ctx.setLineDash([6/cam.scale,6/cam.scale]);
+  ctx.beginPath(); ctx.moveTo(currentPts[0].x,currentPts[0].y);
+  for (let i=1;i<currentPts.length;i++) ctx.lineTo(currentPts[i].x,currentPts[i].y);
+  ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+}
+
+function drawWaterPreview() {
+  if (!waterOn || !waterOrigin) return;
+  for (const wb of waterBranches) {
+    if (wb.raw.length < 2) continue;
+    const pts = catmullRom(wb.raw, 4);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(100,190,255,0.5)';
+    ctx.lineWidth = 2 / cam.scale;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // pulsing dot at origin
+  const pulse = 0.5 + 0.5*Math.sin(Date.now()/160);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(waterOrigin.x, waterOrigin.y, (3+pulse*2)/cam.scale, 0, Math.PI*2);
+  ctx.fillStyle = `rgba(150,220,255,${0.6+pulse*0.3})`; ctx.fill();
+  ctx.restore();
+}
+
+// ─── Wind ─────────────────────────────────────────────────────────────────────
+function applyWind(wx, wy, dvx, dvy) {
+  const speed=hypot(dvx,dvy); if (speed<0.001/cam.scale) return;
+  const radius=90/cam.scale;
+  for (const b of branches) {
+    for (const leaf of b.leaves) {
+      if (leaf.p<0.3) continue;
+      const d=hypot(leaf.x-wx, leaf.y-wy);
+      if (d<radius) {
+        const str=(1-d/radius)*speed*4;
+        leaf.windDX+=dvx*str; leaf.windDY+=dvy*str;
+        if (str>0.8/cam.scale && Math.random()<0.04) {
+          spawnLeaf(leaf.x+(leaf.windDX||0), leaf.y+(leaf.windDY||0),
+            dvx*0.35+(Math.random()-0.5)*0.12/cam.scale,
+            dvy*0.35-Math.random()*0.06/cam.scale,
+            leaf.size, leaf.col, leaf.angle);
+          leaf.shed=true; leaf.p=0;
+        }
+      }
+    }
+  }
+}
+
+function decayWind(dt) {
+  const f=Math.pow(0.90,dt/16);
+  for (const b of branches)
+    for (const leaf of b.leaves) {
+      if (leaf.windDX) { leaf.windDX*=f; if(Math.abs(leaf.windDX)<0.0005) leaf.windDX=0; }
+      if (leaf.windDY) { leaf.windDY*=f; if(Math.abs(leaf.windDY)<0.0005) leaf.windDY=0; }
+    }
+}
+
+// ─── Grow ─────────────────────────────────────────────────────────────────────
+// Stroke freely — branches sprout from the path. Fast stroke = large branches.
+const SPROUT_DIST = 22; // screen px of travel between each sprout
+
+function handleGrow(wx, wy, now) {
+  if (!isPointerDown || !growLastPos) return;
+  const dd  = pdist({x:wx,y:wy}, growLastPos);
+  const dt  = now - growLastTime;
+  // local speed in world units / ms (guard against dt=0)
+  const spd = dt > 2 ? dd / dt : growLastSpeed || 0.3;
+  growLastSpeed = spd;
+
+  const threshold = SPROUT_DIST / cam.scale;
+  growDist += dd;
+  while (growDist >= threshold) {
+    growDist -= threshold;
+    // direction of stroke at this point
+    const strokeAngle = Math.atan2(wy - growLastPos.y, wx - growLastPos.x);
+    spawnSprout({x:wx, y:wy, angle:strokeAngle}, spd);
+  }
+  growLastPos  = {x:wx, y:wy};
+  growLastTime = now;
+}
+
+function spawnSprout(pt, strokeSpeed) {
+  // alternate sides, with slight randomness
+  growSide *= -1;
+  const speedNorm = clamp(strokeSpeed / 0.8, 0, 1); // 0=slow/small, 1=fast/large
+  const branchLen = lerp(5, 70, speedNorm) / cam.scale;
+
+  // random starting angle — wider initial spread
+  let ang = pt.angle + Math.PI * 0.5 * growSide + (Math.random()-0.5) * 1.1;
+  const now = performance.now();
+  // variable number of steps so lengths aren't all the same
+  const steps = 5 + Math.floor(Math.random() * 5);
+  const raw = [{x:pt.x, y:pt.y, t:now}];
+  for (let i=1; i<=steps; i++) {
+    // larger, irregular angle drift per step
+    ang += (Math.random()-0.5) * 0.55;
+    // variable step size — some steps longer, some shorter
+    const stepLen = (branchLen / steps) * (0.5 + Math.random() * 1.2);
+    raw.push({x:raw[i-1].x + Math.cos(ang)*stepLen,
+              y:raw[i-1].y + Math.sin(ang)*stepLen,
+              t: now + i * 50});
+  }
+  // power curve: slow strokes nearly bare, fast strokes dense
+  const leafCount = Math.round(lerp(0, 65, Math.pow(clamp(strokeSpeed/0.6, 0, 1), 2.8)));
+  branches.push(createBranch(raw, strokeSpeed, leafCount));
+}
+
+// ─── Shake ────────────────────────────────────────────────────────────────────
+function startShake(wx, wy, now) {
+  const maxReach=60/cam.scale;
+  let best=null, bestD=Infinity;
+  for (const b of branches) {
+    if (b.progress<0.8) continue;
+    const r=nearestOnBranch(b,wx,wy,maxReach);
+    if (r&&r.dist<bestD) { best=b; bestD=r.dist; }
+  }
+  if (!best) return;
+  best.shakeStart=now; best.shakeAmp=14/cam.scale; best.shakeFading=false;
+}
+
+function updateShakes(now, dt) {
+  for (const b of branches) {
+    if (!b.shakeAmp) continue;
+    if (b.shakeFading) {
+      b.shakeAmp*=Math.pow(0.96,dt/16);
+      if (b.shakeAmp<0.04/cam.scale) b.shakeAmp=0;
+    } else {
+      // shed leaves while actively shaking
+      const t=(now-b.shakeStart)/60;
+      const sx=b.shakeAmp*Math.sin(t*2.4), sy=b.shakeAmp*Math.cos(t*1.7)*0.3;
+      for (const leaf of b.leaves) {
+        if (leaf.p<0.5) continue;
+        if (Math.random()<0.00035*dt) {
+          spawnLeaf(leaf.x+sx, leaf.y+sy,
+            (Math.random()-0.5)*0.18/cam.scale, -Math.random()*0.14/cam.scale,
+            leaf.size, leaf.col, leaf.angle);
+          leaf.shed=true; leaf.p=0;
+        }
+      }
+    }
+  }
+}
+
+function stopShake() {
+  for (const b of branches) if (b.shakeAmp>0) b.shakeFading=true;
+}
+
+// ─── Water ────────────────────────────────────────────────────────────────────
+function makeWaterBranch(origin, now) {
+  const side  = Math.random() > 0.5 ? 1 : -1;
+  const angle = origin.parentAngle + Math.PI*0.5*side + (Math.random()-0.5)*1.4;
+  return { raw: [{x:origin.x, y:origin.y, t:now}], angle };
+}
+
+// spawn a branch off a random point along an existing water branch
+function makeWaterBranchFromParent(now) {
+  const eligible = waterBranches.filter(wb => wb.raw.length > 8);
+  if (!eligible.length) return makeWaterBranch(waterOrigin, now);
+  const parent = eligible[Math.floor(Math.random()*eligible.length)];
+  // pick a point in the latter half of the parent
+  const idx  = Math.floor(parent.raw.length * 0.4 + Math.random() * parent.raw.length * 0.55);
+  const pt   = parent.raw[idx];
+  const prev = parent.raw[Math.max(0, idx-4)];
+  const parentAngle = Math.atan2(pt.y-prev.y, pt.x-prev.x);
+  const side  = Math.random()>0.5?1:-1;
+  const angle = parentAngle + Math.PI*0.5*side + (Math.random()-0.5)*1.2;
+  return { raw: [{x:pt.x, y:pt.y, t:now}], angle };
+}
+
+function startWater(wx, wy) {
+  const maxD=55/cam.scale; let bestPt=null, bestAngle=0, bestD=Infinity;
+  for (const b of branches) {
+    if (b.progress<0.8) continue;
+    const r=nearestOnBranch(b,wx,wy,maxD);
+    if (r&&r.dist<bestD) { bestPt=r.pt; bestAngle=r.pt.angle; bestD=r.dist; }
+  }
+  if (!bestPt) return;
+  const now = performance.now();
+  waterOrigin    = {x:bestPt.x, y:bestPt.y, parentAngle:bestAngle};
+  waterStartTime = now;
+  waterLastSpawn = now;
+  waterBranches  = [makeWaterBranch(waterOrigin, now)];
+  waterOn        = true;
+}
+
+function updateWater(now, dt) {
+  if (!waterOn || !waterOrigin) return;
+  const elapsed   = now - waterStartTime;
+  // faster acceleration
+  const speedMult = 1 + Math.pow(elapsed / 1400, 1.5);
+  const step      = 65 / cam.scale / 1000 * dt * speedMult;
+  // spawn interval tightens quickly; later spawns branch off existing branches
+  const spawnInterval = Math.max(300, 900 - waterBranches.length * 120);
+  if (now - waterLastSpawn > spawnInterval && waterBranches.length < 12) {
+    // first two always from origin, rest mostly off existing branches
+    const nb = waterBranches.length < 2
+      ? makeWaterBranch(waterOrigin, now)
+      : makeWaterBranchFromParent(now);
+    waterBranches.push(nb);
+    waterLastSpawn = now;
+  }
+  // grow every branch
+  for (const wb of waterBranches) {
+    wb.angle += (Math.random()-0.5) * 0.15;
+    const last = wb.raw[wb.raw.length-1];
+    wb.raw.push({x:last.x + Math.cos(wb.angle)*step,
+                 y:last.y + Math.sin(wb.angle)*step, t:now});
+  }
+}
+
+function stopWater() {
+  for (const wb of waterBranches) {
+    if (wb.raw.length >= 5) branches.push(createBranch(wb.raw, 0.35));
+  }
+  waterOn=false; waterOrigin=null; waterBranches=[];
+}
+
+// ─── Render loop ──────────────────────────────────────────────────────────────
+let lastTime=0;
+function render(now) {
+  requestAnimationFrame(render);
+  const dt=Math.min(now-lastTime,50); lastTime=now;
+  const W=canvas.width, H=canvas.height;
+
+  ctx.fillStyle='#080f08'; ctx.fillRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(W*0.5+cam.x, H*0.5+cam.y);
+  ctx.scale(cam.scale,cam.scale);
+
+  decayWind(dt);
+  updateParticles(dt);
+  if (waterOn) updateWater(now,dt);
+  updateShakes(now,dt);
+
+  for (const b of branches) {
+    if (b.progress<1) b.progress=Math.min(1,b.progress+dt/1400);
+    drawBranch(b,now);
+  }
+  drawParticles();
+  drawSnapIndicators();
+  drawStrokePreview();
+  drawWaterPreview();
+  ctx.restore();
+}
+requestAnimationFrame(render);
+
+// ─── Input helpers ────────────────────────────────────────────────────────────
+function finishStroke() {
+  if (isDrawing&&currentPts.length>=3) branches.push(createBranch(currentPts));
+  isDrawing=false; currentPts=[];
+}
+
+function onDown(wx, wy, now) {
+  isPointerDown=true;
+  if      (mode==='draw')  { isDrawing=true; const snap=findSnapTip(wx,wy); const st=snap?{...snap}:{x:wx,y:wy}; hoverSnap=null; currentPts=[{...st,t:now}]; }
+  else if (mode==='wind')  { lastWindPos={x:wx,y:wy}; }
+  else if (mode==='grow')  { isDrawing=true; growDist=0; growSide=1; growLastPos={x:wx,y:wy}; growLastTime=now; growLastSpeed=0.3; currentPts=[{x:wx,y:wy,t:now}]; }
+  else if (mode==='shake') { startShake(wx,wy,now); }
+  else if (mode==='water') { startWater(wx,wy); }
+}
+
+function onMove(wx, wy, screenDx, screenDy) {
+  if (isPanning) { cam.x+=screenDx; cam.y+=screenDy; return; }
+
+  if (!isPointerDown) {
+    if (mode==='draw') hoverSnap=findSnapTip(wx,wy);
+    lastWorldPos={x:wx,y:wy}; return;
+  }
+
+  if (mode==='draw'&&isDrawing) {
+    const last=currentPts[currentPts.length-1];
+    if (pdist({x:wx,y:wy},last)>3/cam.scale) currentPts.push({x:wx,y:wy,t:performance.now()});
+  } else if (mode==='wind'&&lastWindPos) {
+    const dvx=wx-lastWindPos.x, dvy=wy-lastWindPos.y;
+    applyWind(wx,wy,dvx,dvy); lastWindPos={x:wx,y:wy};
+  } else if (mode==='grow'&&isDrawing) {
+    const last=currentPts[currentPts.length-1];
+    if (pdist({x:wx,y:wy},last)>3/cam.scale) currentPts.push({x:wx,y:wy,t:performance.now()});
+    handleGrow(wx,wy,performance.now());
+  }
+  lastWorldPos={x:wx,y:wy};
+}
+
+function onUp() {
+  isPointerDown=false;
+  if (isPanning) { isPanning=false; panLast=null; canvas.style.cursor=CURSORS[mode]; return; }
+  if (mode==='draw')  finishStroke();
+  if (mode==='grow')  { isDrawing=false; currentPts=[]; growLastPos=null; } // stroke is guide only
+  if (mode==='shake') stopShake();
+  if (mode==='water') stopWater();
+  lastWindPos=null; growLastPos=null;
+}
+
+// ─── Mouse ────────────────────────────────────────────────────────────────────
+let lastMouseSx=0, lastMouseSy=0;
+canvas.addEventListener('mousedown', e=>{
+  e.preventDefault();
+  lastMouseSx=e.clientX; lastMouseSy=e.clientY;
+  if (e.button===2) { isPanning=true; canvas.style.cursor='grab'; return; }
+  onDown(...Object.values(s2w(e.clientX,e.clientY)), performance.now());
+});
+
+canvas.addEventListener('mousemove', e=>{
+  const dx=e.clientX-lastMouseSx, dy=e.clientY-lastMouseSy;
+  lastMouseSx=e.clientX; lastMouseSy=e.clientY;
+  onMove(...Object.values(s2w(e.clientX,e.clientY)), dx, dy);
+});
+
+canvas.addEventListener('mouseup',    ()=>onUp());
+canvas.addEventListener('mouseleave', ()=>{ finishStroke(); stopShake(); stopWater(); isPointerDown=false; isPanning=false; hoverSnap=null; canvas.style.cursor=CURSORS[mode]; });
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+
+// ─── Scroll zoom ──────────────────────────────────────────────────────────────
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const f=e.deltaY<0?1.12:1/1.12;
+  const mx=e.clientX-canvas.width*0.5, my=e.clientY-canvas.height*0.5;
+  cam.scale=clamp(cam.scale*f,0.02,40); cam.x=mx+(cam.x-mx)*f; cam.y=my+(cam.y-my)*f;
+},{passive:false});
+
+// ─── Touch ────────────────────────────────────────────────────────────────────
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  for (const t of e.changedTouches) activeTouches.set(t.identifier,{x:t.clientX,y:t.clientY});
+  if (e.touches.length===1) {
+    pinchState=null;
+    const t=e.touches[0]; lastTouchScreen={x:t.clientX,y:t.clientY};
+    onDown(...Object.values(s2w(t.clientX,t.clientY)), performance.now());
+  } else if (e.touches.length>=2) {
+    finishStroke(); stopShake(); stopWater(); isPointerDown=false;
+    const t1=e.touches[0],t2=e.touches[1];
+    pinchState={startDist:hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY),
+                startScale:cam.scale,startCam:{...cam},
+                midX:(t1.clientX+t2.clientX)*0.5,midY:(t1.clientY+t2.clientY)*0.5};
+  }
+},{passive:false});
+
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if (e.touches.length===1&&isPointerDown&&!pinchState) {
+    const t=e.touches[0];
+    const dx=t.clientX-lastTouchScreen.x, dy=t.clientY-lastTouchScreen.y;
+    lastTouchScreen={x:t.clientX,y:t.clientY};
+    onMove(...Object.values(s2w(t.clientX,t.clientY)),dx,dy);
+  } else if (e.touches.length>=2&&pinchState) {
+    const t1=e.touches[0],t2=e.touches[1];
+    const nD=hypot(t2.clientX-t1.clientX,t2.clientY-t1.clientY);
+    const nMx=(t1.clientX+t2.clientX)*0.5, nMy=(t1.clientY+t2.clientY)*0.5;
+    const sf=nD/pinchState.startDist;
+    cam.scale=clamp(pinchState.startScale*sf,0.02,40);
+    const pmx=pinchState.midX-canvas.width*0.5, pmy=pinchState.midY-canvas.height*0.5;
+    cam.x=(nMx-canvas.width*0.5)-(pmx-pinchState.startCam.x)*sf;
+    cam.y=(nMy-canvas.height*0.5)-(pmy-pinchState.startCam.y)*sf;
+  }
+},{passive:false});
+
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  for (const t of e.changedTouches) activeTouches.delete(t.identifier);
+  if (e.touches.length===0) { onUp(); pinchState=null; }
+  else if (e.touches.length===1) pinchState=null;
+},{passive:false});
+
+canvas.addEventListener('touchcancel',e=>{
+  e.preventDefault(); finishStroke(); stopShake(); stopWater();
+  isPointerDown=false; pinchState=null; activeTouches.clear();
+},{passive:false});
+
+// ─── Toolbar ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('#toolbar button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    finishStroke(); stopShake(); stopWater(); isPointerDown=false; hoverSnap=null;
+    mode=btn.dataset.mode;
+    document.querySelectorAll('#toolbar button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    canvas.style.cursor=CURSORS[mode];
+    hint.textContent=HINTS[mode];
+  });
+});
+
+// keyboard shortcuts
+window.addEventListener('keydown',e=>{
+  const map={d:'draw',w:'wind',g:'grow',s:'shake',q:'water'};
+  if (map[e.key]) document.querySelector(`[data-mode="${map[e.key]}"]`).click();
+});
+
+canvas.style.cursor='crosshair';
+</script>
+</body>
+</html>

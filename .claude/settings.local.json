@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(vercel ls:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/morgan-map/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(curl -sv http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/morgan-map)",
+      "Bash(curl -s http://localhost:5173/morgan-map)",
+      "Bash(curl -sv http://localhost:5173/@vite/client)",
+      "Bash(vercel inspect:*)",
+      "Bash(git rm:*)",
+      "Bash(gh run:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

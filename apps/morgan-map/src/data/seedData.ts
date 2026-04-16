@@ -4,7 +4,7 @@ import { axisToCanvas } from '../utils/coordinates';
 
 function makeNode(
   id: string,
-  data: Omit<NodeData, 'selected' | 'riskFlags' | 'opportunities'>,
+  data: Omit<NodeData, 'selected'>,
   extra: Partial<NodeData> = {}
 ): Node<NodeData> {
   const pos = axisToCanvas(data.automationLevel, data.criticalityLevel);
@@ -12,7 +12,7 @@ function makeNode(
     id,
     type: data.nodeType,
     position: pos,
-    data: { ...data, riskFlags: [], opportunities: [], selected: false, ...extra },
+    data: { ...data, selected: false, ...extra },
     draggable: true,
   };
 }

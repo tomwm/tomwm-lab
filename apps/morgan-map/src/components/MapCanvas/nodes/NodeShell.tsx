@@ -44,11 +44,6 @@ export function NodeShell({ id, data, color, icon, onClick }: NodeShellProps) {
   const isPlanned    = data.status === 'planned';
   const isDeprecated = data.status === 'deprecated';
 
-  const hasCriticalRisk = data.riskFlags.some(
-    (f) => f.severity === 'critical' || f.severity === 'high'
-  );
-  const hasMediumRisk = data.riskFlags.some((f) => f.severity === 'medium');
-
   const showFrictionPoint = overlays.frictionPoints && data.overlays.frictionPoints;
   const showDataQuality   = overlays.dataQuality    && data.overlays.dataQuality;
 
@@ -97,12 +92,6 @@ export function NodeShell({ id, data, color, icon, onClick }: NodeShellProps) {
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {hasCriticalRisk && (
-            <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="High/Critical risk flags" />
-          )}
-          {!hasCriticalRisk && hasMediumRisk && (
-            <span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" title="Medium risk flags" />
-          )}
           {stepLabel && (
             <span
               className="flex items-center justify-center rounded-full bg-gray-800 text-white font-bold leading-none flex-shrink-0"
