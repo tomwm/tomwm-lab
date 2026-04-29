@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { Analytics } from '@vercel/analytics/react'
 import App from './App.tsx'
 import { GalleryPage } from './pages/GalleryPage.tsx'
 import { ViewerApp } from './pages/ViewerApp.tsx'
@@ -21,5 +22,8 @@ if (path.includes('/gallery')) {
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>{root}</React.StrictMode>
+  <React.StrictMode>
+    {root}
+    <Analytics />
+  </React.StrictMode>
 )
