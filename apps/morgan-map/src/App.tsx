@@ -15,7 +15,9 @@ import { CreateEdgeModal } from './components/Modals/CreateEdgeModal';
 // ---------------------------------------------------------------------------
 export default function App() {
   const [showCreateNodeModal, setShowCreateNodeModal] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(
+    () => !new URLSearchParams(window.location.search).has('resume')
+  );
 
   const activePanel = useMapStore((s) => s.activePanel);
   const selectedEdgeId = useMapStore((s) => s.selectedEdgeId);

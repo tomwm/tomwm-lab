@@ -101,7 +101,7 @@ export function ViewerApp({ mapId }: ViewerAppProps) {
         </button>
 
         <a
-          href="/morgan-map/"
+          href="/morgan-map/?resume=1"
           className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors"
         >
           <ArrowLeft size={13} />

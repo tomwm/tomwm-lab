@@ -50,7 +50,7 @@ export function GalleryPage() {
         <h1 className="text-sm font-semibold text-gray-800">Published Maps</h1>
         <div className="flex-1" />
         <a
-          href="/morgan-map/"
+          href="/morgan-map/?resume=1"
           className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
         >
           <ArrowLeft size={13} />
