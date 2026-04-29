@@ -10,6 +10,7 @@ import {
   Maximize2,
   Map,
   LayoutGrid,
+  Scaling,
   FilePlus,
   Save,
   FolderOpen,
@@ -172,7 +173,7 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
             }`}
             title="Canvas size"
           >
-            <LayoutGrid size={13} />
+            <Scaling size={13} />
             Canvas Size
             <ChevronDown size={11} className={`transition-transform ${showCanvasMenu ? 'rotate-180' : ''}`} />
           </button>
@@ -270,6 +271,7 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
         {/* Gallery */}
         <a
           href="/morgan-map/gallery"
+          onClick={() => history.replaceState(null, '', '/morgan-map/?resume=1')}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
           title="Browse published maps"
         >

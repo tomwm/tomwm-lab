@@ -100,6 +100,7 @@ function RelationshipEdge({
   const selectedNodeId = useMapStore((s) => s.selectedNodeId);
   const traceAncestors = useMapStore((s) => s.traceAncestors);
   const traceDescendants = useMapStore((s) => s.traceDescendants);
+  const showEdgeLabels = useMapStore((s) => s.showEdgeLabels);
 
   const relType: RelationshipType = data?.relationshipType ?? 'informs';
   const style = EDGE_STYLES[relType];
@@ -168,30 +169,32 @@ function RelationshipEdge({
       <g onClick={() => selectEdge(id)} style={{ cursor: 'pointer' }}>
         <path d={edgePath} fill="none" strokeWidth={12} stroke="transparent" />
       </g>
-      <EdgeLabelRenderer>
-        <div
-          style={{
-            position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-            pointerEvents: 'all',
-            cursor: 'pointer',
-            opacity: edgeOpacity,
-          }}
-          className="nodrag nopan"
-          onClick={() => selectEdge(id)}
-        >
-          <span
-            className="px-1 py-0.5 rounded text-[9px] font-medium"
+      {showEdgeLabels && (
+        <EdgeLabelRenderer>
+          <div
             style={{
-              backgroundColor: `${style.stroke}18`,
-              color: style.stroke,
-              border: `1px solid ${style.stroke}40`,
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all',
+              cursor: 'pointer',
+              opacity: edgeOpacity,
             }}
+            className="nodrag nopan"
+            onClick={() => selectEdge(id)}
           >
-            {SHORT_LABELS[relType]}
-          </span>
-        </div>
-      </EdgeLabelRenderer>
+            <span
+              className="px-1 py-0.5 rounded text-[9px] font-medium"
+              style={{
+                backgroundColor: `${style.stroke}18`,
+                color: style.stroke,
+                border: `1px solid ${style.stroke}40`,
+              }}
+            >
+              {SHORT_LABELS[relType]}
+            </span>
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
   );
 }

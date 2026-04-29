@@ -1,7 +1,6 @@
-import { X, SlidersHorizontal } from 'lucide-react';
+import { X, SlidersHorizontal, ListOrdered, Tag } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
 import { NodeType, NODE_TYPE_LABELS } from '../../types';
-import { ListOrdered } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Overlay code kept for future use — not currently exposed in the UI
@@ -19,6 +18,8 @@ export function ViewsPanel() {
   const nodes = useMapStore((s) => s.nodes);
   const showStepNumbers = useMapStore((s) => s.showStepNumbers);
   const toggleShowStepNumbers = useMapStore((s) => s.toggleShowStepNumbers);
+  const showEdgeLabels = useMapStore((s) => s.showEdgeLabels);
+  const toggleShowEdgeLabels = useMapStore((s) => s.toggleShowEdgeLabels);
 
   const allOrgs = [...new Set(nodes.map((n) => n.data.organisation).filter(Boolean))].sort();
   const allTags = [...new Set(nodes.flatMap((n) => n.data.tags))].sort();
@@ -100,6 +101,16 @@ export function ViewsPanel() {
             />
             <ListOrdered size={12} className="text-gray-500" />
             <span className="text-xs text-gray-700 group-hover:text-gray-900">Show step numbers</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={showEdgeLabels}
+              onChange={toggleShowEdgeLabels}
+              className="w-3.5 h-3.5 accent-blue-500 rounded"
+            />
+            <Tag size={12} className="text-gray-500" />
+            <span className="text-xs text-gray-700 group-hover:text-gray-900">Show edge labels</span>
           </label>
         </div>
 

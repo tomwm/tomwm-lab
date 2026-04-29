@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Map, ArrowLeft, Calendar } from 'lucide-react';
+
+function goBackToEditor() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '/morgan-map/?resume=1';
+  }
+}
 import { MapThumbnail } from '../components/MapThumbnail';
 
 interface PublishedMap {
@@ -49,13 +57,13 @@ export function GalleryPage() {
         <div className="w-px h-5 bg-gray-200" />
         <h1 className="text-sm font-semibold text-gray-800">Published Maps</h1>
         <div className="flex-1" />
-        <a
-          href="/morgan-map/?resume=1"
+        <button
+          onClick={goBackToEditor}
           className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
         >
           <ArrowLeft size={13} />
           Back to editor
-        </a>
+        </button>
       </div>
 
       {/* Content */}

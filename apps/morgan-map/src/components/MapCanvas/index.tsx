@@ -19,7 +19,7 @@ import { useMapStore, getFilteredNodes } from '../../store/mapStore';
 import { nodeTypes } from './nodes';
 import { AxisBackground } from './AxisBackground';
 import RelationshipEdge from './edges/RelationshipEdge';
-import { EdgeData } from '../../types';
+import { EdgeData, NodeType } from '../../types';
 import { canvasToAxis } from '../../utils/coordinates';
 
 const edgeTypes = {
@@ -93,6 +93,24 @@ function MapCanvasInner({ readOnly = false }: { readOnly?: boolean }) {
   const displayNodes = nodesLocked
     ? filteredNodes.map((n) => ({ ...n, draggable: false }))
     : filteredNodes;
+
+  // Hide edges whose source or target node is filtered out
+  const visibleNodeIds = new Set(
+    nodes
+      .filter((node) => {
+        const d = node.data;
+        if (filters.nodeTypes.length > 0 && !filters.nodeTypes.includes(d.nodeType as NodeType)) return false;
+        if (filters.organisations.length > 0 && !filters.organisations.includes(d.organisation)) return false;
+        if (filters.tags.length > 0 && !filters.tags.some((t) => d.tags.includes(t))) return false;
+        if (d.criticalityLevel < filters.criticalityRange[0] || d.criticalityLevel > filters.criticalityRange[1]) return false;
+        if (d.automationLevel < filters.automationRange[0] || d.automationLevel > filters.automationRange[1]) return false;
+        return true;
+      })
+      .map((n) => n.id)
+  );
+  const displayEdges = edges.filter(
+    (e) => visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target)
+  );
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -179,7 +197,7 @@ function MapCanvasInner({ readOnly = false }: { readOnly?: boolean }) {
     >
       <ReactFlow
         nodes={displayNodes}
-        edges={edges}
+        edges={displayEdges}
         onNodesChange={readOnly ? undefined : handleNodesChange}
         onEdgesChange={readOnly ? undefined : onEdgesChange}
         onConnect={readOnly ? undefined : onConnect}

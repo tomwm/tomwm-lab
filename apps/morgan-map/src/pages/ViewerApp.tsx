@@ -100,13 +100,13 @@ export function ViewerApp({ mapId }: ViewerAppProps) {
           {copied ? 'Copied!' : 'Copy link'}
         </button>
 
-        <a
-          href="/morgan-map/?resume=1"
+        <button
+          onClick={() => window.history.length > 1 ? window.history.back() : (window.location.href = '/morgan-map/?resume=1')}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors"
         >
           <ArrowLeft size={13} />
           Open editor
-        </a>
+        </button>
       </div>
 
       {/* Map + panels */}

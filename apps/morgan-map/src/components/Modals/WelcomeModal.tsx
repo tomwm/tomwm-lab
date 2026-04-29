@@ -67,6 +67,7 @@ export function WelcomeModal({ onDismiss }: WelcomeModalProps) {
 
           <a
             href="/morgan-map/gallery"
+            onClick={() => history.replaceState(null, '', '/morgan-map/?resume=1')}
             className="group w-full flex items-start gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-left"
           >
             <div className="w-9 h-9 rounded-lg bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center flex-shrink-0 transition-colors">

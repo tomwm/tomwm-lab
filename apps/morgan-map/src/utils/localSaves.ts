@@ -2,6 +2,34 @@ import { Node, Edge } from 'reactflow';
 import { NodeData, EdgeData } from '../types';
 
 const STORAGE_KEY = 'morgan-map:saves';
+const AUTOSAVE_KEY = 'morgan-map:autosave';
+
+export interface AutosaveData {
+  name: string;
+  canvasWidth: number;
+  canvasHeight: number;
+  gridLocked: boolean;
+  nodes: Node<NodeData>[];
+  edges: Edge<EdgeData>[];
+}
+
+export function writeAutosave(data: AutosaveData): void {
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+  } catch {
+    // storage full — ignore
+  }
+}
+
+export function readAutosave(): AutosaveData | null {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AutosaveData;
+  } catch {
+    return null;
+  }
+}
 
 export interface SavedMap {
   id: string;

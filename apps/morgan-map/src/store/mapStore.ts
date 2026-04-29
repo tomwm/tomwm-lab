@@ -89,6 +89,10 @@ interface MapStore {
   // Step numbers
   showStepNumbers: boolean;
   toggleShowStepNumbers: () => void;
+
+  // Edge labels
+  showEdgeLabels: boolean;
+  toggleShowEdgeLabels: () => void;
 }
 
 let nodeIdCounter = 100;
@@ -140,6 +144,7 @@ export const useMapStore = create<MapStore>((set) => ({
   canvasWidth: 1200,
   canvasHeight: 900,
   showStepNumbers: true,
+  showEdgeLabels: true,
 
   onNodesChange: (changes: NodeChange[]) => {
     set((state) => {
@@ -377,6 +382,7 @@ export const useMapStore = create<MapStore>((set) => ({
   toggleGridLock: () => set((state) => ({ gridLocked: !state.gridLocked })),
   toggleNodesLocked: () => set((state) => ({ nodesLocked: !state.nodesLocked })),
   toggleShowStepNumbers: () => set((state) => ({ showStepNumbers: !state.showStepNumbers })),
+  toggleShowEdgeLabels: () => set((state) => ({ showEdgeLabels: !state.showEdgeLabels })),
 
   setCanvasSize: (width, height) => {
     set((state) => {
