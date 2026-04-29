@@ -15,7 +15,24 @@ export default async function handler(req, res) {
   // ── GET /api/maps — list published maps ──────────────────────────────────
   if (req.method === 'GET') {
     const rows = await sql`
-      SELECT id, name, node_count, edge_count, published_at
+      SELECT
+        id, name, node_count, edge_count, published_at,
+        (
+          SELECT json_agg(json_build_object(
+            'id',   node->>'id',
+            'x',    (node->'position'->>'x')::float,
+            'y',    (node->'position'->>'y')::float,
+            'type', node->'data'->>'nodeType'
+          ))
+          FROM jsonb_array_elements(map_data->'nodes') AS node
+        ) AS node_positions,
+        (
+          SELECT json_agg(json_build_object(
+            'source', edge->>'source',
+            'target', edge->>'target'
+          ))
+          FROM jsonb_array_elements(map_data->'edges') AS edge
+        ) AS edge_positions
       FROM published_maps
       ORDER BY published_at DESC
       LIMIT 100

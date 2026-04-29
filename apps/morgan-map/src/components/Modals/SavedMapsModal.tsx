@@ -8,6 +8,8 @@ interface PublishedMap {
   id: string;
   name: string;
   node_count: number;
+  node_positions: { id: string; x: number; y: number; type: string }[];
+  edge_positions: { source: string; target: string }[];
   edge_count: number;
   published_at: string;
 }

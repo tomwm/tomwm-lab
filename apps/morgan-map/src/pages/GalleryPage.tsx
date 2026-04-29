@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Map, ArrowLeft, Calendar, Circle } from 'lucide-react';
+import { Map, ArrowLeft, Calendar } from 'lucide-react';
+import { MapThumbnail } from '../components/MapThumbnail';
 
 interface PublishedMap {
   id: string;
@@ -7,6 +8,8 @@ interface PublishedMap {
   node_count: number;
   edge_count: number;
   published_at: string;
+  node_positions: { id: string; x: number; y: number; type: string }[];
+  edge_positions: { source: string; target: string }[];
 }
 
 function timeAgo(dateStr: string): string {
@@ -92,15 +95,12 @@ export function GalleryPage() {
                   href={`/morgan-map/view/${m.id}`}
                   className="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all p-4 flex flex-col gap-3"
                 >
-                  {/* Mini canvas placeholder */}
-                  <div className="w-full h-24 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 flex items-center justify-center gap-1.5 flex-wrap p-2">
-                    {Array.from({ length: Math.min(m.node_count, 9) }).map((_, i) => (
-                      <Circle
-                        key={i}
-                        size={8}
-                        className="text-gray-300 fill-gray-200 flex-shrink-0"
-                      />
-                    ))}
+                  {/* Map thumbnail */}
+                  <div className="w-full h-24 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 overflow-hidden">
+                    <MapThumbnail
+                      nodes={m.node_positions ?? []}
+                      edges={m.edge_positions ?? []}
+                    />
                   </div>
 
                   {/* Info */}
