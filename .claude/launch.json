@@ -2,6 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "bc-gov-network-graph",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:bc-gov-network-graph"],
+      "port": 8080,
+      "autoPort": true
+    },
+    {
       "name": "morgan-map",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:morgan-map"],

@@ -52,7 +52,7 @@ function ConfidenceBar({ value }: { value: number }) {
   );
 }
 
-export function NodeDetailPanel() {
+export function NodeDetailPanel({ readOnly = false }: { readOnly?: boolean }) {
   const selectedNodeId = useMapStore((s) => s.selectedNodeId);
   const nodes = useMapStore((s) => s.nodes);
   const edges = useMapStore((s) => s.edges);
@@ -157,21 +157,25 @@ export function NodeDetailPanel() {
             </>
           ) : (
             <>
-              <button
-                onClick={() => deleteNode(node.id)}
-                className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                title="Delete node"
-              >
-                <Trash2 size={14} />
-              </button>
-              <button
-                onClick={startEditing}
-                className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
-                title="Edit node"
-              >
-                <Pencil size={12} />
-                Edit
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => deleteNode(node.id)}
+                  className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Delete node"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+              {!readOnly && (
+                <button
+                  onClick={startEditing}
+                  className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
+                  title="Edit node"
+                >
+                  <Pencil size={12} />
+                  Edit
+                </button>
+              )}
               <button
                 onClick={() => selectNode(null)}
                 className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"

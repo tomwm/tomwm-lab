@@ -31,7 +31,7 @@ const defaultEdgeOptions = {
   markerEnd: { type: MarkerType.ArrowClosed, width: 12, height: 12 },
 };
 
-function MapCanvasInner() {
+function MapCanvasInner({ readOnly = false }: { readOnly?: boolean }) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
   const [minimapVisible, setMinimapVisible] = useState(false);
@@ -175,16 +175,16 @@ function MapCanvasInner() {
     <div
       ref={reactFlowWrapper}
       className="w-full h-full"
-      onDoubleClick={onWrapperDoubleClick}
+      onDoubleClick={readOnly ? undefined : onWrapperDoubleClick}
     >
       <ReactFlow
         nodes={displayNodes}
         edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeDragStop={nodesLocked ? undefined : onNodeDragStop}
-        onPaneClick={onPaneClick}
+        onNodesChange={readOnly ? undefined : handleNodesChange}
+        onEdgesChange={readOnly ? undefined : onEdgesChange}
+        onConnect={readOnly ? undefined : onConnect}
+        onNodeDragStop={readOnly || nodesLocked ? undefined : onNodeDragStop}
+        onPaneClick={readOnly ? undefined : onPaneClick}
         onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -193,8 +193,8 @@ function MapCanvasInner() {
         maxZoom={2}
         attributionPosition="bottom-right"
         proOptions={{ hideAttribution: true }}
-        nodesDraggable={!nodesLocked}
-        nodesConnectable={!nodesLocked}
+        nodesDraggable={!readOnly && !nodesLocked}
+        nodesConnectable={!readOnly && !nodesLocked}
         elementsSelectable={true}
         selectionOnDrag={selectionMode}
         panOnDrag={selectionMode ? [1, 2] : true}
@@ -274,10 +274,10 @@ function MapCanvasInner() {
   );
 }
 
-export function MapCanvas() {
+export function MapCanvas({ readOnly = false }: { readOnly?: boolean }) {
   return (
     <ReactFlowProvider>
-      <MapCanvasInner />
+      <MapCanvasInner readOnly={readOnly} />
     </ReactFlowProvider>
   );
 }

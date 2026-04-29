@@ -17,11 +17,13 @@ import {
   Check,
   FolderClosed,
   HelpCircle,
+  Globe,
 } from 'lucide-react';
 import { useMapStore, CANVAS_SIZE_PRESETS } from '../../store/mapStore';
 import { exportToJSON, importFromJSON } from '../../utils/exportImport';
 import { saveMap } from '../../utils/localSaves';
 import { SavedMapsModal } from '../Modals/SavedMapsModal';
+import { PublishModal } from '../Modals/PublishModal';
 
 interface MainToolbarProps {
   onAddNode: () => void;
@@ -48,6 +50,7 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(mapName);
   const [showSavedMaps, setShowSavedMaps] = useState(false);
+  const [showPublish, setShowPublish] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false);
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [showCanvasMenu, setShowCanvasMenu] = useState(false);
@@ -243,6 +246,13 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
                 <button onClick={() => { fileInputRef.current?.click(); setShowFileMenu(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
                   <Upload size={13} className="text-gray-400" />Import from JSON
                 </button>
+                <div className="my-1 border-t border-gray-100" />
+                <button onClick={() => { setShowPublish(true); setShowFileMenu(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                  <Globe size={13} className="text-blue-400" />Publish to gallery
+                </button>
+                <a href="/morgan-map/gallery" className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                  <LayoutGrid size={13} className="text-gray-400" />Browse gallery
+                </a>
               </div>
             </>
           )}
@@ -287,6 +297,7 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
     </div>
 
     {showSavedMaps && <SavedMapsModal onClose={() => setShowSavedMaps(false)} />}
+    {showPublish && <PublishModal onClose={() => setShowPublish(false)} />}
     </>
   );
 }

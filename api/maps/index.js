@@ -1,0 +1,43 @@
+import { neon } from '@neondatabase/serverless';
+
+const cors = (res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+};
+
+export default async function handler(req, res) {
+  cors(res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const sql = neon(process.env.DATABASE_URL);
+
+  // ── GET /api/maps — list published maps ──────────────────────────────────
+  if (req.method === 'GET') {
+    const rows = await sql`
+      SELECT id, name, node_count, edge_count, published_at
+      FROM published_maps
+      ORDER BY published_at DESC
+      LIMIT 100
+    `;
+    return res.status(200).json(rows);
+  }
+
+  // ── POST /api/maps — publish a map ───────────────────────────────────────
+  if (req.method === 'POST') {
+    const { name, nodes, edges } = req.body ?? {};
+    if (!name || !Array.isArray(nodes) || !Array.isArray(edges)) {
+      return res.status(400).json({ error: 'name, nodes and edges are required' });
+    }
+
+    const [row] = await sql`
+      INSERT INTO published_maps (name, node_count, edge_count, map_data)
+      VALUES (${name}, ${nodes.length}, ${edges.length}, ${JSON.stringify({ nodes, edges })})
+      RETURNING id, name, node_count, edge_count, published_at
+    `;
+
+    return res.status(201).json(row);
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}

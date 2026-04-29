@@ -1,15 +1,36 @@
 import { useState, useEffect } from 'react';
-import { X, FolderOpen, Trash2, Clock, Database, BookOpen, Star } from 'lucide-react';
+import { X, FolderOpen, Trash2, Clock, Database, BookOpen, Star, Globe, Calendar } from 'lucide-react';
 import { listSavedMaps, deleteSavedMap, formatSavedAt, SavedMap } from '../../utils/localSaves';
 import { useMapStore } from '../../store/mapStore';
 import { SEED_NODES, SEED_EDGES } from '../../data/seedData';
+
+interface PublishedMap {
+  id: string;
+  name: string;
+  node_count: number;
+  edge_count: number;
+  published_at: string;
+}
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return days < 30 ? `${days}d ago` : new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 interface SavedMapsModalProps {
   onClose: () => void;
 }
 
 export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
+  const [tab, setTab] = useState<'local' | 'published'>('local');
   const [saves, setSaves] = useState<SavedMap[]>([]);
+  const [published, setPublished] = useState<PublishedMap[]>([]);
+  const [publishedLoading, setPublishedLoading] = useState(false);
   const importMap = useMapStore((s) => s.importMap);
   const setMapName = useMapStore((s) => s.setMapName);
   const setCanvasSize = useMapStore((s) => s.setCanvasSize);
@@ -18,6 +39,16 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
   useEffect(() => {
     setSaves(listSavedMaps());
   }, []);
+
+  useEffect(() => {
+    if (tab === 'published' && published.length === 0) {
+      setPublishedLoading(true);
+      fetch('/api/maps')
+        .then((r) => r.json())
+        .then((data) => { setPublished(data); setPublishedLoading(false); })
+        .catch(() => setPublishedLoading(false));
+    }
+  }, [tab]);
 
   const handleLoad = (save: SavedMap) => {
     importMap({ nodes: save.nodes, edges: save.edges });
@@ -46,10 +77,7 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <Database size={16} className="text-indigo-500" />
-            <h2 className="text-sm font-semibold text-gray-800">Saved Maps</h2>
-            <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-              stored in browser
-            </span>
+            <h2 className="text-sm font-semibold text-gray-800">Open Map</h2>
           </div>
           <button
             onClick={onClose}
@@ -59,8 +87,70 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 px-5">
+          <button
+            onClick={() => setTab('local')}
+            className={`flex items-center gap-1.5 px-1 py-3 text-xs font-medium border-b-2 transition-colors mr-5 ${tab === 'local' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <Database size={12} />
+            Saved locally
+          </button>
+          <button
+            onClick={() => setTab('published')}
+            className={`flex items-center gap-1.5 px-1 py-3 text-xs font-medium border-b-2 transition-colors ${tab === 'published' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <Globe size={12} />
+            Published
+          </button>
+        </div>
+
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4">
+
+          {/* ── Published tab ── */}
+          {tab === 'published' && (
+            <>
+              {publishedLoading && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              {!publishedLoading && published.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Globe size={28} className="text-gray-200 mb-3" />
+                  <p className="text-sm font-medium text-gray-400">No published maps yet</p>
+                  <p className="text-xs text-gray-300 mt-1">Use File → Publish to gallery to share your map.</p>
+                </div>
+              )}
+              {!publishedLoading && published.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {published.map((m) => (
+                    <a
+                      key={m.id}
+                      href={`/morgan-map/view/${m.id}`}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/40 group transition-all"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{m.name}</p>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-[11px] text-gray-400">{m.node_count} nodes · {m.edge_count} edges</span>
+                          <span className="flex items-center gap-1 text-[11px] text-gray-400 ml-auto">
+                            <Calendar size={10} />
+                            {timeAgo(m.published_at)}
+                          </span>
+                        </div>
+                      </div>
+                      <FolderOpen size={13} className="text-gray-300 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── Local tab ── */}
+          {tab === 'local' && (<>
 
           {/* Examples */}
           <div className="mb-4">
@@ -141,6 +231,7 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
               ))}
             </div>
           )}
+          </>)}
         </div>
 
         {/* Footer note */}
