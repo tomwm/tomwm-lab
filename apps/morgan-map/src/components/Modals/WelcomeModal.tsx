@@ -1,4 +1,4 @@
-import { Map, Plus, BookOpen } from 'lucide-react';
+import { Map, Plus, BookOpen, LayoutGrid } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
 import { SEED_NODES, SEED_EDGES } from '../../data/seedData';
 
@@ -64,6 +64,19 @@ export function WelcomeModal({ onDismiss }: WelcomeModalProps) {
               <div className="text-xs text-gray-500 leading-snug">Begin with an empty canvas. Add nodes, connect them, and build your own map from scratch.</div>
             </div>
           </button>
+
+          <a
+            href="/morgan-map/gallery"
+            className="group w-full flex items-start gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-purple-200 hover:bg-purple-50 transition-all text-left"
+          >
+            <div className="w-9 h-9 rounded-lg bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center flex-shrink-0 transition-colors">
+              <LayoutGrid size={16} className="text-purple-600" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-gray-800 mb-0.5">Browse gallery</div>
+              <div className="text-xs text-gray-500 leading-snug">Explore maps published by others — open any in read-only view or use as a starting point.</div>
+            </div>
+          </a>
 
           <p className="text-center text-[11px] text-gray-400 pt-1">
             You can import a JSON file at any time via <span className="font-medium">File → Import</span>

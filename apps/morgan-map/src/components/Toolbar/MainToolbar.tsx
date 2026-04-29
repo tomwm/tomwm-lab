@@ -250,9 +250,6 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
                 <button onClick={() => { setShowPublish(true); setShowFileMenu(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
                   <Globe size={13} className="text-blue-400" />Publish to gallery
                 </button>
-                <a href="/morgan-map/gallery" className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors">
-                  <LayoutGrid size={13} className="text-gray-400" />Browse gallery
-                </a>
               </div>
             </>
           )}
@@ -269,6 +266,16 @@ export function MainToolbar({ onAddNode, onFitView }: MainToolbarProps) {
           <HelpCircle size={13} />
           Guide
         </button>
+
+        {/* Gallery */}
+        <a
+          href="/morgan-map/gallery"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+          title="Browse published maps"
+        >
+          <LayoutGrid size={13} />
+          Gallery
+        </a>
 
         <div className="w-px h-5 bg-gray-200 mx-0.5" />
 
