@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { randomBytes, createHash } from 'crypto';
 
 const cors = (res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -47,13 +48,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'name, nodes and edges are required' });
     }
 
+    // Ensure delete_token_hash column exists (idempotent migration)
+    await sql`
+      ALTER TABLE published_maps
+      ADD COLUMN IF NOT EXISTS delete_token_hash text
+    `;
+
+    const deleteToken = randomBytes(32).toString('hex');
+    const deleteTokenHash = createHash('sha256').update(deleteToken).digest('hex');
+
     const [row] = await sql`
-      INSERT INTO published_maps (name, node_count, edge_count, map_data)
-      VALUES (${name}, ${nodes.length}, ${edges.length}, ${JSON.stringify({ nodes, edges })})
+      INSERT INTO published_maps (name, node_count, edge_count, map_data, delete_token_hash)
+      VALUES (${name}, ${nodes.length}, ${edges.length}, ${JSON.stringify({ nodes, edges })}, ${deleteTokenHash})
       RETURNING id, name, node_count, edge_count, published_at
     `;
 
-    return res.status(201).json(row);
+    return res.status(201).json({ ...row, deleteToken });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

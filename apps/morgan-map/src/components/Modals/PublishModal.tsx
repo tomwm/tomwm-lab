@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Globe, Copy, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { useMapStore } from '../../store/mapStore';
+import { savePublishToken } from '../../utils/localSaves';
 
 interface PublishModalProps {
   onClose: () => void;
@@ -32,6 +33,7 @@ export function PublishModal({ onClose }: PublishModalProps) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setPublishedId(data.id);
+      if (data.deleteToken) savePublishToken(data.id, data.deleteToken);
       setState('done');
     } catch (e) {
       console.error('Publish failed:', e);

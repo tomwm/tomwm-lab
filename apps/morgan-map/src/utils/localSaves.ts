@@ -13,6 +13,38 @@ export interface AutosaveData {
   edges: Edge<EdgeData>[];
 }
 
+// ── Publish tokens ────────────────────────────────────────────────────────
+// Stored as { [mapId]: deleteToken } so users can delete maps they published.
+
+const PUBLISH_TOKENS_KEY = 'morgan-map:publish-tokens';
+
+function readPublishTokens(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(PUBLISH_TOKENS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function savePublishToken(mapId: string, token: string): void {
+  const tokens = readPublishTokens();
+  tokens[mapId] = token;
+  localStorage.setItem(PUBLISH_TOKENS_KEY, JSON.stringify(tokens));
+}
+
+export function getPublishToken(mapId: string): string | null {
+  return readPublishTokens()[mapId] ?? null;
+}
+
+export function removePublishToken(mapId: string): void {
+  const tokens = readPublishTokens();
+  delete tokens[mapId];
+  localStorage.setItem(PUBLISH_TOKENS_KEY, JSON.stringify(tokens));
+}
+
+// ── Autosave ──────────────────────────────────────────────────────────────
+
 export function writeAutosave(data: AutosaveData): void {
   try {
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));

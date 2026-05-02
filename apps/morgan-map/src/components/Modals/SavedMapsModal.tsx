@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, FolderOpen, Trash2, Clock, Database, BookOpen, Star, Globe, Calendar } from 'lucide-react';
-import { listSavedMaps, deleteSavedMap, formatSavedAt, SavedMap } from '../../utils/localSaves';
+import { listSavedMaps, deleteSavedMap, formatSavedAt, SavedMap, getPublishToken, removePublishToken } from '../../utils/localSaves';
 import { useMapStore } from '../../store/mapStore';
 import { SEED_NODES, SEED_EDGES } from '../../data/seedData';
 
@@ -72,6 +72,19 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
     setSaves(listSavedMaps());
   };
 
+  const handleDeletePublished = async (mapId: string) => {
+    const token = getPublishToken(mapId);
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/maps/${mapId}?token=${token}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      removePublishToken(mapId);
+      setPublished((prev) => prev.filter((m) => m.id !== mapId));
+    } catch {
+      alert('Failed to delete map. Please try again.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
@@ -127,25 +140,44 @@ export function SavedMapsModal({ onClose }: SavedMapsModalProps) {
               )}
               {!publishedLoading && published.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  {published.map((m) => (
-                    <a
-                      key={m.id}
-                      href={`/morgan-map/view/${m.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/40 group transition-all"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{m.name}</p>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-[11px] text-gray-400">{m.node_count} nodes · {m.edge_count} edges</span>
-                          <span className="flex items-center gap-1 text-[11px] text-gray-400 ml-auto">
-                            <Calendar size={10} />
-                            {timeAgo(m.published_at)}
-                          </span>
+                  {published.map((m) => {
+                    const canDelete = !!getPublishToken(m.id);
+                    return (
+                      <div
+                        key={m.id}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/40 group transition-all"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{m.name}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-[11px] text-gray-400">{m.node_count} nodes · {m.edge_count} edges</span>
+                            <span className="flex items-center gap-1 text-[11px] text-gray-400 ml-auto">
+                              <Calendar size={10} />
+                              {timeAgo(m.published_at)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeletePublished(m.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Delete from gallery"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                          <a
+                            href={`/morgan-map/view/${m.id}`}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <FolderOpen size={11} />
+                            Open
+                          </a>
                         </div>
                       </div>
-                      <FolderOpen size={13} className="text-gray-300 group-hover:text-blue-500 flex-shrink-0 transition-colors" />
-                    </a>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
