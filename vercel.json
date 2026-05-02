@@ -8,6 +8,7 @@
     { "source": "/bc-gov-network-graph/:path*",  "destination": "/bc-gov-network-graph/index.html" },
     { "source": "/smile",                       "destination": "/smile/index.html" },
     { "source": "/lottery-sim/:path*",           "destination": "/lottery-sim/index.html" },
+    { "source": "/morgan-map/admin",              "destination": "/morgan-map/index.html" },
     { "source": "/morgan-map/:path*",            "destination": "/morgan-map/index.html" },
     { "source": "/sexual-elf(.*)",               "destination": "https://sexual-elf.vercel.app/sexual-elf$1" },
     { "source": "/collective-unconcious(.*)",   "destination": "https://collective-unconcious.vercel.app/collective-unconcious$1" }
