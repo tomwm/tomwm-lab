@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { themeDefinitions } from '@/data/migration_theme_definitions';
-import { uniqueCards, resolveThemeCardId } from '@/lib/utils';
+import { uniqueCards } from '@/lib/utils';
 
 interface Props {
   activeTheme: string | null;
@@ -13,7 +13,6 @@ export default function CrossCuttingThemes({ activeTheme, onThemeToggle }: Props
   // Count how many related card IDs actually exist in the deck
   const resolvedCount = active
     ? active.relatedCardIds
-        .map(resolveThemeCardId)
         .filter(id => uniqueCards.some(c => c.id === id)).length
     : 0;
 

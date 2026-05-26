@@ -1,6 +1,7 @@
 import { X, Link2 } from 'lucide-react';
 import { type MigrationCard } from '@/data/cards';
 import { uniqueCards, cardColourClass, cardTypeIcon } from '@/lib/utils';
+import { themeDefinitions } from '@/data/migration_theme_definitions';
 
 interface Props {
   card: MigrationCard;
@@ -12,6 +13,8 @@ export default function CardDetail({ card, onClose, onNavigate }: Props) {
   const linked = card.timeline.links
     .map(id => uniqueCards.find(c => c.id === id))
     .filter(Boolean) as MigrationCard[];
+
+  const cardThemes = themeDefinitions.filter(t => t.relatedCardIds.includes(card.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end" onClick={onClose}>
@@ -65,14 +68,17 @@ export default function CardDetail({ card, onClose, onNavigate }: Props) {
             </div>
           </section>
 
-          {/* Tags */}
-          {card.timeline.tags.length > 0 && (
+          {/* Themes */}
+          {cardThemes.length > 0 && (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Tags</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Themes</h3>
               <div className="flex flex-wrap gap-1.5">
-                {card.timeline.tags.map(tag => (
-                  <span key={tag} className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full border border-stone-200">
-                    {tag}
+                {cardThemes.map(theme => (
+                  <span
+                    key={theme.id}
+                    className="text-xs bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full border border-violet-200 font-medium"
+                  >
+                    {theme.title}
                   </span>
                 ))}
               </div>

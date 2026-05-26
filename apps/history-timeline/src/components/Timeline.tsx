@@ -7,13 +7,12 @@ import {
   ERA_HEADER_COLOURS,
   cardColourClass, cardTypeIcon, getCardKind,
   getTimelineBucket, getTimelineYear,
-  resolveThemeCardId,
 } from '@/lib/utils';
 import { themeDefinitions } from '@/data/migration_theme_definitions';
 import CardDetail from './CardDetail';
 import CrossCuttingThemes from './CrossCuttingThemes';
 
-const ALL_TYPES = ['All', 'People', 'Events', 'Themes'];
+const ALL_TYPES = ['All', 'People', 'Events', 'Movements'];
 
 export default function Timeline() {
   const [selected, setSelected] = useState<MigrationCard | null>(null);
@@ -29,8 +28,7 @@ export default function Timeline() {
   // Build the set of related card IDs for the active theme (resolved to actual card IDs)
   const relatedCardIds: Set<string> | null = activeTheme
     ? new Set(
-        (themeDefinitions.find(t => t.id === activeTheme)?.relatedCardIds ?? [])
-          .map(resolveThemeCardId)
+        themeDefinitions.find(t => t.id === activeTheme)?.relatedCardIds ?? []
       )
     : null;
 
@@ -47,7 +45,7 @@ export default function Timeline() {
     const kind = getCardKind(card);
     if (filter === 'People') return kind === 'person';
     if (filter === 'Events') return kind === 'event';
-    if (filter === 'Themes') return kind === 'theme';
+    if (filter === 'Movements') return kind === 'theme';
     return true;
   }
 
