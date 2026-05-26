@@ -12,6 +12,7 @@ const apps = [
   'uk-gov-network-graph',
   'smile',
   'morgan-map',
+  'history-timeline',
 ]
 
 mkdirSync(join(__dirname, 'dist'), { recursive: true })

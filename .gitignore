@@ -5,3 +5,5 @@ apps/*/dist/
 apps/*/.claude/
 .vercel/
 .vercel
+.env.local
+.env*.local

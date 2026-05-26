@@ -14,9 +14,15 @@
     "dev:smile": "npm -w apps/smile run dev",
     "dev:lottery-sim": "npm -w apps/lottery-sim run dev",
     "dev:morgan-map": "npm -w apps/morgan-map run dev",
-    "dev:sexual-elf": "npm -w apps/sexual-elf run dev"
+    "dev:sexual-elf": "npm -w apps/sexual-elf run dev",
+    "dev:only-moos": "npm -w apps/only-moos run dev",
+    "dev:history-timeline": "npm -w apps/history-timeline run dev"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   }
 }

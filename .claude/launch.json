@@ -25,6 +25,24 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "8085", "apps/samtrees"],
       "port": 8085
+    },
+    {
+      "name": "constellation-sampler",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/constellation-sampler"],
+      "port": 5180
+    },
+    {
+      "name": "only-moos",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:only-moos"],
+      "port": 3003
+    },
+    {
+      "name": "history-timeline",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/history-timeline"],
+      "port": 8085
     }
   ]
 }
