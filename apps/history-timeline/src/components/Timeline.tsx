@@ -7,8 +7,11 @@ import {
   ERA_HEADER_COLOURS,
   cardColourClass, cardTypeIcon, getCardKind,
   getTimelineBucket, getTimelineYear,
+  resolveThemeCardId,
 } from '@/lib/utils';
+import { themeDefinitions } from '@/data/migration_theme_definitions';
 import CardDetail from './CardDetail';
+import CrossCuttingThemes from './CrossCuttingThemes';
 
 const ALL_TYPES = ['All', 'People', 'Events', 'Themes'];
 
@@ -16,7 +19,28 @@ export default function Timeline() {
   const [selected, setSelected] = useState<MigrationCard | null>(null);
   const [filter, setFilter] = useState('All');
   const [eraIndex, setEraIndex] = useState(0);
+  const [activeTheme, setActiveTheme] = useState<string | null>(null);
   const touchStartX = useRef(0);
+
+  function toggleTheme(id: string) {
+    setActiveTheme(prev => (prev === id ? null : id));
+  }
+
+  // Build the set of related card IDs for the active theme (resolved to actual card IDs)
+  const relatedCardIds: Set<string> | null = activeTheme
+    ? new Set(
+        (themeDefinitions.find(t => t.id === activeTheme)?.relatedCardIds ?? [])
+          .map(resolveThemeCardId)
+      )
+    : null;
+
+  // Returns extra className for a card based on active theme state
+  function themeClass(cardId: string, isSelected: boolean): string {
+    if (!relatedCardIds) return '';
+    if (isSelected) return ''; // selection ring takes priority
+    if (relatedCardIds.has(cardId)) return 'ring-2 ring-violet-500 ring-offset-1';
+    return 'opacity-30';
+  }
 
   function matchesFilter(card: MigrationCard) {
     if (filter === 'All') return true;
@@ -73,6 +97,9 @@ export default function Timeline() {
         </span>
       </div>
 
+      {/* Cross-cutting themes bar */}
+      <CrossCuttingThemes activeTheme={activeTheme} onThemeToggle={toggleTheme} />
+
       {/* MOBILE: single-column swipe view (portrait only) */}
       <div className="md:hidden landscape:hidden flex-1 flex flex-col overflow-hidden">
         {/* Era header with prev/next */}
@@ -124,7 +151,9 @@ export default function Timeline() {
               key={card.id}
               onClick={() => setSelected(card)}
               className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-all active:scale-[0.99] ${cardColourClass(card)} ${
-                selected?.id === card.id ? 'ring-2 ring-stone-700 ring-offset-1' : ''
+                selected?.id === card.id
+                  ? 'ring-2 ring-stone-700 ring-offset-1'
+                  : themeClass(card.id, false)
               }`}
             >
               <div className="flex items-start gap-2">
@@ -158,7 +187,9 @@ export default function Timeline() {
                       key={card.id}
                       onClick={() => setSelected(card)}
                       className={`w-full text-left px-2.5 py-2 rounded-lg border text-xs transition-all hover:shadow-md hover:scale-[1.02] active:scale-100 ${cardColourClass(card)} ${
-                        selected?.id === card.id ? 'ring-2 ring-stone-700 ring-offset-1' : ''
+                        selected?.id === card.id
+                          ? 'ring-2 ring-stone-700 ring-offset-1'
+                          : themeClass(card.id, false)
                       }`}
                     >
                       <div className="flex items-start gap-1.5">

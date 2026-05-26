@@ -124,6 +124,26 @@ const PERSON_TIMELINE_PLACEMENT: Record<string, { timelineYear: number; timeline
   'margaret-thatcher': { timelineYear: 1982, timelinePeriod: 'Modern Britain & Migration' },
 };
 
+// Resolver map for IDs used in migration_theme_definitions.ts that differ from actual card IDs
+const THEME_CARD_ID_MAP: Record<string, string> = {
+  '1982-falklands-war':                            'falklands-war-1982',
+  'expansion-of-the-european-union-2004-2007':     'european-union-expansion-2004-2007',
+  'hindswaraj':                                    'hind-swaraj',
+  'impact-of-wwi-on-the-british-empire':           'impact-of-wwi-on-british-empire',
+  'jewish-migration':                              'jewish-migration-1881-1914',
+  'members-of-parliament-from-ethnic-minorities':  'ethnic-minority-mps-1987',
+  'migration-from-the-eu':                         'migration-from-eu-2004-2020',
+  'pan-african-conference':                        'pan-african-conference-1945',
+  'racist-violence-nf-bnp-and-anti-racist-groups': 'racist-violence-nf-bnp-anti-racist-groups',
+  'windrush-caribbean-migration':                  'windrush-and-caribbean-migration',
+  'wwii-in-the-east-and-the-fall-of-singapore':    'wwii-east-fall-of-singapore',
+};
+
+/** Resolve a theme relatedCardId to the actual card ID used in cards.ts */
+export function resolveThemeCardId(id: string): string {
+  return THEME_CARD_ID_MAP[id] ?? id;
+}
+
 export type CardKind = 'person' | 'event' | 'theme';
 
 export function getCardKind(card: { id: string; cardType: string }): CardKind {
