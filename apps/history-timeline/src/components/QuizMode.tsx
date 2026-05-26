@@ -87,7 +87,7 @@ export default function QuizMode() {
   const progress = ((qIndex) / questions.length) * 100;
 
   return (
-    <div className="flex flex-col h-full max-w-2xl mx-auto px-4 py-4 gap-4">
+    <div className="flex flex-col h-full overflow-y-auto max-w-2xl mx-auto px-4 py-4 gap-4">
       {/* Era filter */}
       <div className="flex gap-1.5 overflow-x-auto pb-0.5 flex-shrink-0 -mx-4 px-4">
         {eras.map(era => (
@@ -118,7 +118,7 @@ export default function QuizMode() {
       </div>
 
       {/* Options */}
-      <div className="space-y-2 flex-1">
+      <div className="space-y-2">
         {q.options.map((opt, i) => {
           const letter = ['A', 'B', 'C', 'D'][i];
           const isSelected = selected === opt;
@@ -148,7 +148,7 @@ export default function QuizMode() {
 
       {/* Explanation + Next */}
       {selected && (
-        <div className="space-y-3 animate-fade-in">
+        <div className="space-y-3 animate-fade-in" ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}>
           <div className={`rounded-xl p-4 text-sm ${isCorrect ? 'bg-green-50 border border-green-200 text-green-900' : 'bg-orange-50 border border-orange-200 text-orange-900'}`}>
             <p className="font-semibold mb-1">{isCorrect ? 'Correct!' : 'Not quite.'}</p>
             <p className="leading-relaxed text-xs">{q.explanation}</p>
