@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { type MigrationCard } from '@/data/cards';
 import {
   uniqueCards,
@@ -19,10 +19,15 @@ export default function Timeline() {
   const [filter, setFilter] = useState('All');
   const [eraIndex, setEraIndex] = useState(0);
   const [activeTheme, setActiveTheme] = useState<string | null>(null);
+  const [isThemesOpen, setIsThemesOpen] = useState(false);
   const touchStartX = useRef(0);
 
   function toggleTheme(id: string) {
     setActiveTheme(prev => (prev === id ? null : id));
+  }
+
+  function toggleThemesPanel() {
+    setIsThemesOpen(o => !o);
   }
 
   // Build the set of related card IDs for the active theme (resolved to actual card IDs)
@@ -74,7 +79,7 @@ export default function Timeline() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Filter bar */}
+      {/* Filter bar + Themes toggle */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-stone-200 bg-white flex-shrink-0">
         <span className="text-xs text-stone-500 mr-1 hidden sm:inline">Show:</span>
         {ALL_TYPES.map(t => (
@@ -90,13 +95,30 @@ export default function Timeline() {
             {t}
           </button>
         ))}
-        <span className="ml-auto text-xs text-stone-400 flex-shrink-0 hidden sm:block">
-          {uniqueCards.filter(matchesFilter).length} cards · scroll →
-        </span>
+
+        {/* Themes toggle — right-aligned, with active dot when a theme is selected */}
+        <button
+          onClick={toggleThemesPanel}
+          className={`ml-auto flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border transition-colors flex-shrink-0 ${
+            isThemesOpen
+              ? 'bg-violet-700 text-white border-violet-700'
+              : activeTheme
+                ? 'bg-violet-100 text-violet-700 border-violet-300'
+                : 'border-stone-300 text-stone-600 hover:border-stone-500'
+          }`}
+        >
+          {activeTheme && !isThemesOpen && (
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0" />
+          )}
+          Themes
+          {isThemesOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+        </button>
       </div>
 
-      {/* Cross-cutting themes bar */}
-      <CrossCuttingThemes activeTheme={activeTheme} onThemeToggle={toggleTheme} />
+      {/* Collapsible themes panel */}
+      {isThemesOpen && (
+        <CrossCuttingThemes activeTheme={activeTheme} onThemeToggle={toggleTheme} />
+      )}
 
       {/* MOBILE: single-column swipe view (portrait only) */}
       <div className="md:hidden landscape:hidden flex-1 flex flex-col overflow-hidden">
