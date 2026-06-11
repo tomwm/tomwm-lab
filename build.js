@@ -1,10 +1,13 @@
 import { execSync } from 'child_process'
-import { mkdirSync, copyFileSync } from 'fs'
+import { mkdirSync, copyFileSync, rmSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const run = (cmd, cwd) => execSync(cmd, { stdio: 'inherit', cwd: cwd || __dirname })
+
+// Remove stale build outputs that are no longer built here
+rmSync(join(__dirname, 'dist', 'morgan-map'), { recursive: true, force: true })
 
 // Add new apps here
 const apps = [
