@@ -43,6 +43,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "apps/history-timeline"],
       "port": 8085
+    },
+    {
+      "name": "tomscomms",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/tomscomms"],
+      "port": 3001
+    },
+    {
+      "name": "splitz",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:splitz"],
+      "port": 3009
     }
   ]
 }

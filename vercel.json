@@ -13,6 +13,7 @@
     { "source": "/morgan-map/:path*",            "destination": "https://morgan-map.vercel.app/:path*" },
     { "source": "/morgan-map",                   "destination": "https://morgan-map.vercel.app" },
     { "source": "/sexual-elf(.*)",               "destination": "https://sexual-elf.vercel.app/sexual-elf$1" },
-    { "source": "/collective-unconcious(.*)",    "destination": "https://collective-unconcious.vercel.app/collective-unconcious$1" }
+    { "source": "/collective-unconcious(.*)",    "destination": "https://collective-unconcious.vercel.app/collective-unconcious$1" },
+    { "source": "/splitz(.*)",                   "destination": "https://splitz-tomwm.vercel.app/splitz$1" }
   ]
 }

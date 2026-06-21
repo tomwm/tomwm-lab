@@ -16,7 +16,8 @@
     "dev:morgan-map": "npm -w apps/morgan-map run dev",
     "dev:sexual-elf": "npm -w apps/sexual-elf run dev",
     "dev:only-moos": "npm -w apps/only-moos run dev",
-    "dev:history-timeline": "npm -w apps/history-timeline run dev"
+    "dev:history-timeline": "npm -w apps/history-timeline run dev",
+    "dev:splitz": "npm -w apps/splitz run dev"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0"
