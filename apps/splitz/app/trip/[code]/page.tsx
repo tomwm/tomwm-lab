@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 import { calcBalances, calcBalancesGlobal, calcSettlements, equalSplits, type Expense } from "@/lib/settle";
 
 type Trip = {
@@ -41,7 +43,7 @@ export default function TripPage() {
   const [savingShares, setSavingShares] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/trips/${code}`);
+    const res = await fetch(`${BASE}/api/trips/${code}`);
     if (!res.ok) {
       setError("Trip not found. Check your code.");
       setLoading(false);
@@ -78,7 +80,7 @@ export default function TripPage() {
     if (!trip || !desc || !amount || !paidBy) return;
     setSaving(true);
     const splits = customSplits ?? equalSplits(trip.members);
-    await fetch("/api/expenses", {
+    await fetch(`${BASE}/api/expenses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tripCode: code, description: desc, amount: Number(amount), paidBy, splits }),
@@ -89,7 +91,7 @@ export default function TripPage() {
   }
 
   async function deleteExpense(id: string) {
-    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+    await fetch(`${BASE}/api/expenses/${id}`, { method: "DELETE" });
     load();
   }
 
@@ -102,7 +104,7 @@ export default function TripPage() {
     if (!trip) return;
     setSavingShares(true);
     const shares = globalSharesMode ? sharesDraft : {};
-    await fetch(`/api/trips/${code}/shares`, {
+    await fetch(`${BASE}/api/trips/${code}/shares`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memberShares: shares }),
@@ -114,7 +116,7 @@ export default function TripPage() {
   async function saveSplits(id: string) {
     const total = Object.values(splitDraft).reduce((a, b) => a + b, 0);
     if (Math.abs(total - 100) > 0.5) return;
-    await fetch(`/api/expenses/${id}`, {
+    await fetch(`${BASE}/api/expenses/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ splits: splitDraft }),
@@ -517,7 +519,7 @@ export default function TripPage() {
                 <button
                   onClick={async () => {
                     setGlobalSharesMode(false);
-                    await fetch(`/api/trips/${code}/shares`, {
+                    await fetch(`${BASE}/api/trips/${code}/shares`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ memberShares: {} }),

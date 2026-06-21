@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export default function Home() {
   const router = useRouter();
   const [tab, setTab] = useState<"create" | "join">("create");
@@ -34,7 +36,7 @@ export default function Home() {
     if (!tripName.trim() || members.length < 2) return;
     setCreating(true);
     try {
-      const res = await fetch("/api/trips", {
+      const res = await fetch(`${BASE}/api/trips`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: tripName.trim(), members }),
@@ -52,7 +54,7 @@ export default function Home() {
     if (!trimmed) return;
     setJoining(true);
     setJoinError("");
-    const res = await fetch(`/api/trips/${trimmed}`);
+    const res = await fetch(`${BASE}/api/trips/${trimmed}`);
     if (res.ok) {
       router.push(`/trip/${trimmed}`);
     } else {

@@ -4,7 +4,7 @@ import path from "path";
 const isVercel = !!process.env.VERCEL;
 
 const nextConfig: NextConfig = {
-  basePath: "/splitz",
+  ...(isVercel ? { basePath: "/splitz" } : {}),
   ...(isVercel ? {} : {
     turbopack: {
       root: path.resolve(__dirname, "../.."),
