@@ -19,8 +19,9 @@ export async function initDB() {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
-  // migrate existing tables that predate member_shares column
+  // migrate existing tables
   await db.execute(`ALTER TABLE trips ADD COLUMN member_shares TEXT NOT NULL DEFAULT '{}'`).catch(() => {});
+  await db.execute(`ALTER TABLE trips ADD COLUMN couples TEXT NOT NULL DEFAULT '[]'`).catch(() => {});
   await db.execute(`
     CREATE TABLE IF NOT EXISTS expenses (
       id TEXT PRIMARY KEY,
@@ -71,6 +72,7 @@ export async function getTrip(code: string) {
     name: row.name as string,
     members: parseMembers(row.members as string),
     member_shares: parseSplits((row.member_shares as string) || "{}"),
+    couples: JSON.parse((row.couples as string) || "[]") as [string, string][],
   };
 }
 
@@ -118,6 +120,15 @@ export async function updateExpenseSplits(id: string, splits: Record<string, num
     args: [JSON.stringify(splits), id],
   });
   return { id, splits };
+}
+
+export async function updateCouples(tripId: string, couples: [string, string][]) {
+  const db = getClient();
+  await db.execute({
+    sql: `UPDATE trips SET couples = ? WHERE id = ?`,
+    args: [JSON.stringify(couples), tripId],
+  });
+  return couples;
 }
 
 export async function updateMemberShares(tripId: string, memberShares: Record<string, number>) {

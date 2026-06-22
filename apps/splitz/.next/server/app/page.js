@@ -1,0 +1,12 @@
+const CHUNK_PUBLIC_PATH = "server/app/page.js";
+const runtime = require("../chunks/ssr/[turbopack]_runtime.js");
+runtime.loadChunk("server/chunks/ssr/d187a_next_dist_224b06ab._.js");
+runtime.loadChunk("server/chunks/ssr/[root-of-the-server]__50a7c09c._.js");
+runtime.loadChunk("server/chunks/ssr/apps_splitz_7e407100._.js");
+runtime.loadChunk("server/chunks/ssr/d187a_7e0c9ffc._.js");
+runtime.loadChunk("server/chunks/ssr/d187a_next_dist_client_components_forbidden-error_88aadd96.js");
+runtime.loadChunk("server/chunks/ssr/d187a_next_dist_client_components_unauthorized-error_289c500a.js");
+runtime.loadChunk("server/chunks/ssr/apps_splitz_f52fbb7d._.js");
+runtime.getOrInstantiateRuntimeModule("[project]/apps/splitz/.next-internal/server/app/page/actions.js [app-rsc] (server actions loader, ecmascript)", CHUNK_PUBLIC_PATH);
+runtime.getOrInstantiateRuntimeModule("[project]/apps/splitz/node_modules/next/dist/esm/build/templates/app-page.js?page=/page { MODULE_0 => \"[project]/apps/splitz/app/layout.tsx [app-rsc] (ecmascript, Next.js server component)\", MODULE_1 => \"[project]/apps/splitz/node_modules/next/dist/client/components/not-found-error.js [app-rsc] (ecmascript, Next.js server component)\", MODULE_2 => \"[project]/apps/splitz/node_modules/next/dist/client/components/forbidden-error.js [app-rsc] (ecmascript, Next.js server component)\", MODULE_3 => \"[project]/apps/splitz/node_modules/next/dist/client/components/unauthorized-error.js [app-rsc] (ecmascript, Next.js server component)\", MODULE_4 => \"[project]/apps/splitz/app/page.tsx [app-rsc] (ecmascript, Next.js server component)\" } [app-rsc] (ecmascript)", CHUNK_PUBLIC_PATH);
+module.exports = runtime.getOrInstantiateRuntimeModule("[project]/apps/splitz/node_modules/next/dist/esm/build/templates/app-page.js?page=/page { MODULE_0 => \"[project]/apps/splitz/app/layout.tsx [app-rsc] (ecmascript, Next.js server component)\", MODULE_1 => \"[project]/apps/splitz/node_modules/next/dist/client/components/not-found-error.js [app-rsc] (ecmascript, Next.js server component)\", MODULE_2 => \"[project]/apps/splitz/node_modules/next/dist/client/components/forbidden-error.js [app-rsc] (ecmascript, Next.js server component)\", MODULE_3 => \"[project]/apps/splitz/node_modules/next/dist/client/components/unauthorized-error.js [app-rsc] (ecmascript, Next.js server component)\", MODULE_4 => \"[project]/apps/splitz/app/page.tsx [app-rsc] (ecmascript, Next.js server component)\" } [app-rsc] (ecmascript)", CHUNK_PUBLIC_PATH).exports;

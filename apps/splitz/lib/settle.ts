@@ -86,6 +86,22 @@ export function calcBalancesGlobal(
   return balances;
 }
 
+// Merge couple balances into a single combined entry before settling
+export function mergeCouplesToBalances(
+  balances: Record<string, number>,
+  couples: [string, string][]
+): Record<string, number> {
+  const merged = { ...balances };
+  for (const [a, b] of couples) {
+    if (merged[a] === undefined || merged[b] === undefined) continue;
+    const combinedName = `${a} & ${b}`;
+    merged[combinedName] = (merged[a] ?? 0) + (merged[b] ?? 0);
+    delete merged[a];
+    delete merged[b];
+  }
+  return merged;
+}
+
 export function equalSplits(members: string[]) {
   const pct = Math.round((100 / members.length) * 100) / 100;
   const splits: Record<string, number> = {};

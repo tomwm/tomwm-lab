@@ -1,0 +1,33 @@
+{
+  "pages": {
+    "/page": [
+      "static/chunks/apps_splitz_app_globals_e92ea836.css",
+      "static/chunks/d187a_next_dist_da4b7992._.js",
+      "static/chunks/apps_splitz_app_layout_tsx_3d700dba._.js",
+      "static/chunks/apps_splitz_1d9ebcbc._.js",
+      "static/chunks/apps_splitz_app_page_tsx_aa842b79._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_328492c6._.js",
+      "static/chunks/d187a_next_dist_compiled_70d17abd._.js",
+      "static/chunks/d187a_next_dist_client_91f8ff84._.js",
+      "static/chunks/d187a_next_dist_57dcb8b1._.js",
+      "static/chunks/d187a_@swc_helpers_cjs_d46cd761._.js",
+      "static/chunks/apps_splitz_e69f0d32._.js",
+      "static/chunks/apps_splitz_bc751d76._.js"
+    ],
+    "/trip/[code]/page": [
+      "static/chunks/apps_splitz_app_globals_e92ea836.css",
+      "static/chunks/d187a_next_dist_da4b7992._.js",
+      "static/chunks/apps_splitz_app_layout_tsx_3d700dba._.js",
+      "static/chunks/apps_splitz_6a2b7cbf._.js",
+      "static/chunks/d187a_next_3c95274e._.js",
+      "static/chunks/apps_splitz_app_trip_[code]_page_tsx_aa842b79._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_328492c6._.js",
+      "static/chunks/d187a_next_dist_compiled_70d17abd._.js",
+      "static/chunks/d187a_next_dist_client_91f8ff84._.js",
+      "static/chunks/d187a_next_dist_57dcb8b1._.js",
+      "static/chunks/d187a_@swc_helpers_cjs_d46cd761._.js",
+      "static/chunks/apps_splitz_e69f0d32._.js",
+      "static/chunks/apps_splitz_bc751d76._.js"
+    ]
+  }
+}

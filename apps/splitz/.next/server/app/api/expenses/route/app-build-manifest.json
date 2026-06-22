@@ -1,0 +1,13 @@
+{
+  "pages": {
+    "/api/expenses/route": [
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_9c392c3d._.js",
+      "static/chunks/d187a_next_dist_compiled_70d17abd._.js",
+      "static/chunks/d187a_next_dist_client_91f8ff84._.js",
+      "static/chunks/d187a_next_dist_43189670._.js",
+      "static/chunks/d187a_@swc_helpers_cjs_d46cd761._.js",
+      "static/chunks/apps_splitz_e69f0d32._.js",
+      "static/chunks/apps_splitz_8a06e395._.js"
+    ]
+  }
+}

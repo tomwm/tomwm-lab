@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import SplitEditor from "@/components/SplitEditor";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-import { calcBalances, calcBalancesGlobal, calcSettlements, equalSplits, type Expense } from "@/lib/settle";
+import { calcBalances, calcBalancesGlobal, calcSettlements, mergeCouplesToBalances, equalSplits, type Expense } from "@/lib/settle";
 
 type Trip = {
   id: string;
@@ -13,6 +13,7 @@ type Trip = {
   name: string;
   members: string[];
   member_shares: Record<string, number>;
+  couples: [string, string][];
   expenses: Expense[];
 };
 
@@ -44,6 +45,10 @@ export default function TripPage() {
   const [addingMember, setAddingMember] = useState(false);
   const [addMemberError, setAddMemberError] = useState("");
 
+  // Couples
+  const [couplesDraft, setCouplesDraft] = useState<[string, string][]>([]);
+  const [savingCouples, setSavingCouples] = useState(false);
+
   // Global member shares
   const [globalSharesMode, setGlobalSharesMode] = useState(false);
   const [sharesDraft, setSharesDraft] = useState<Record<string, number>>({});
@@ -59,6 +64,7 @@ export default function TripPage() {
     const data = await res.json();
     setTrip(data);
     if (!paidBy && data.members.length) setPaidBy(data.members[0]);
+    setCouplesDraft(data.couples || []);
     const hasGlobal = Object.keys(data.member_shares || {}).length > 0;
     setGlobalSharesMode(hasGlobal);
     setSharesDraft(hasGlobal ? data.member_shares : equalSplits(data.members));
@@ -129,6 +135,17 @@ export default function TripPage() {
     setAddingMember(false);
   }
 
+  async function saveCouples(newCouples: [string, string][]) {
+    setSavingCouples(true);
+    await fetch(`${BASE}/api/trips/${code}/couples`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ couples: newCouples }),
+    });
+    setSavingCouples(false);
+    load();
+  }
+
   async function saveGlobalShares() {
     if (!trip) return;
     setSavingShares(true);
@@ -172,9 +189,10 @@ if (loading) {
   }
 
   const hasGlobalShares = Object.keys(trip.member_shares || {}).length > 0;
-  const balances = hasGlobalShares
+  const rawBalances = hasGlobalShares
     ? calcBalancesGlobal(trip.members, trip.expenses, trip.member_shares)
     : calcBalances(trip.members, trip.expenses);
+  const balances = mergeCouplesToBalances(rawBalances, trip.couples || []);
   const settlements = calcSettlements(balances);
   const sharesTotalValid = Math.abs(Object.values(sharesDraft).reduce((a, b) => a + b, 0) - 100) <= 0.5;
   const totalSpend = trip.expenses.reduce((s, e) => s + Number(e.amount), 0);
@@ -520,6 +538,74 @@ if (loading) {
               </div>
             )}
           </div>
+
+          {/* Couples */}
+          {trip.members.length >= 2 && (
+            <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">
+              <h2 className="font-semibold mb-1">Linked finances</h2>
+              <p className="text-xs text-[var(--muted)] mb-3">
+                Mark couples or people who share finances — their balances are combined for settlement.
+              </p>
+
+              {couplesDraft.map(([a, b], i) => (
+                <div key={i} className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium flex-1">{a} & {b}</span>
+                  <button
+                    onClick={() => {
+                      const next = couplesDraft.filter((_, j) => j !== i);
+                      setCouplesDraft(next);
+                      saveCouples(next);
+                    }}
+                    className="text-xs text-[var(--danger)] hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+
+              {/* Pair picker */}
+              {(() => {
+                const paired = new Set(couplesDraft.flat());
+                const available = trip.members.filter((m) => !paired.has(m));
+                if (available.length < 2) return null;
+                return (
+                  <div className="flex items-center gap-2 mt-2">
+                    <select
+                      id="couple-a"
+                      className="flex-1 border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Person 1</option>
+                      {available.map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <span className="text-[var(--muted)] text-sm">&</span>
+                    <select
+                      id="couple-b"
+                      className="flex-1 border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Person 2</option>
+                      {available.map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <button
+                      disabled={savingCouples}
+                      onClick={() => {
+                        const a = (document.getElementById("couple-a") as HTMLSelectElement).value;
+                        const b = (document.getElementById("couple-b") as HTMLSelectElement).value;
+                        if (!a || !b || a === b) return;
+                        const next: [string, string][] = [...couplesDraft, [a, b]];
+                        setCouplesDraft(next);
+                        saveCouples(next);
+                      }}
+                      className="bg-[var(--accent)] text-white text-sm font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40 whitespace-nowrap"
+                    >
+                      Link
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Balances */}
           <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">

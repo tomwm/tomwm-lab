@@ -1,0 +1,3 @@
+{
+  "/api/trips/[code]/route": "app/api/trips/[code]/route.js"
+}
