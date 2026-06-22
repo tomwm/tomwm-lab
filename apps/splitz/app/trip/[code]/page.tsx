@@ -38,6 +38,12 @@ export default function TripPage() {
   const [editingSplitId, setEditingSplitId] = useState<string | null>(null);
   const [splitDraft, setSplitDraft] = useState<Record<string, number>>({});
 
+  // Add member
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
+  const [addMemberError, setAddMemberError] = useState("");
+
   // Global member shares
   const [globalSharesMode, setGlobalSharesMode] = useState(false);
   const [sharesDraft, setSharesDraft] = useState<Record<string, number>>({});
@@ -101,6 +107,28 @@ export default function TripPage() {
     setSplitDraft({ ...expense.splits });
   }
 
+  async function addMember(e: React.FormEvent) {
+    e.preventDefault();
+    const name = newMemberName.trim();
+    if (!name) return;
+    setAddingMember(true);
+    setAddMemberError("");
+    const res = await fetch(`${BASE}/api/trips/${code}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+      setNewMemberName("");
+      setShowAddMember(false);
+      load();
+    } else {
+      const data = await res.json();
+      setAddMemberError(data.error ?? "Failed to add member");
+    }
+    setAddingMember(false);
+  }
+
   async function saveGlobalShares() {
     if (!trip) return;
     setSavingShares(true);
@@ -159,9 +187,44 @@ if (loading) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">{trip.name}</h1>
-            <p className="text-[var(--muted)] text-sm mt-0.5">
-              {trip.members.join(", ")}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap mt-0.5">
+              <p className="text-[var(--muted)] text-sm">{trip.members.join(", ")}</p>
+              {!showAddMember && (
+                <button
+                  onClick={() => { setShowAddMember(true); setAddMemberError(""); setNewMemberName(""); }}
+                  className="text-xs text-[var(--accent)] font-medium hover:underline"
+                >
+                  + Add member
+                </button>
+              )}
+            </div>
+            {showAddMember && (
+              <form onSubmit={addMember} className="flex items-center gap-2 mt-2">
+                <input
+                  type="text"
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  placeholder="Name"
+                  autoFocus
+                  className="border border-[var(--border)] rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] w-32"
+                />
+                <button
+                  type="submit"
+                  disabled={addingMember || !newMemberName.trim()}
+                  className="bg-[var(--accent)] text-white text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40"
+                >
+                  {addingMember ? "…" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddMember(false)}
+                  className="text-xs text-[var(--muted)] hover:text-[var(--text)]"
+                >
+                  Cancel
+                </button>
+                {addMemberError && <p className="text-xs text-[var(--danger)]">{addMemberError}</p>}
+              </form>
+            )}
           </div>
           <button
             onClick={copyCode}
