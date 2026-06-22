@@ -18,12 +18,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await initDB();
     const { id } = await params;
     const body = await req.json();
-    let expense;
-    if (body.splits) {
-      expense = await updateExpenseSplits(id, body.splits);
-    } else {
-      expense = await updateExpense(id, body.description, Number(body.amount), body.paidBy);
+    if (body.description !== undefined) {
+      await updateExpense(id, body.description, Number(body.amount), body.paidBy);
+      await updateExpenseSplits(id, body.splits);
+      return NextResponse.json({ ok: true });
     }
+    const expense = await updateExpenseSplits(id, body.splits);
     return NextResponse.json(expense);
   } catch (e) {
     console.error(e);

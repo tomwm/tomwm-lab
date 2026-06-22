@@ -125,6 +125,7 @@ export default function TripPage() {
     setEditDesc(expense.description);
     setEditAmount(String(expense.amount));
     setEditPaidBy(expense.paid_by);
+    setSplitDraft({ ...expense.splits });
   }
 
   async function saveExpenseEdit(id: string) {
@@ -133,7 +134,7 @@ export default function TripPage() {
     await fetch(`${BASE}/api/expenses/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description: editDesc.trim(), amount: Number(editAmount), paidBy: editPaidBy }),
+      body: JSON.stringify({ description: editDesc.trim(), amount: Number(editAmount), paidBy: editPaidBy, splits: splitDraft }),
     });
     setSavingEdit(false);
     setEditingExpenseId(null);
@@ -440,6 +441,7 @@ if (loading) {
                           step="0.01"
                           className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                           value={editAmount}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => setEditAmount(e.target.value)}
                           placeholder="Amount"
                         />
@@ -451,7 +453,16 @@ if (loading) {
                           {trip.members.map((m) => <option key={m} value={m}>{m}</option>)}
                         </select>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="border-t border-[var(--border)] pt-2 mt-1">
+                        <p className="text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wide">Split</p>
+                        <SplitEditor
+                          members={trip.members}
+                          splits={splitDraft}
+                          onChange={setSplitDraft}
+                          totalAmount={Number(editAmount) || 0}
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-1">
                         <button
                           onClick={() => setEditingExpenseId(null)}
                           className="flex-1 border border-[var(--border)] py-1.5 rounded-lg text-sm font-medium"
@@ -460,7 +471,7 @@ if (loading) {
                         </button>
                         <button
                           onClick={() => saveExpenseEdit(exp.id)}
-                          disabled={savingEdit || !editDesc.trim() || !editAmount}
+                          disabled={savingEdit || !editDesc.trim() || !editAmount || Math.abs(Object.values(splitDraft).reduce((a,b)=>a+b,0) - 100) > 0.5}
                           className="flex-1 bg-[var(--accent)] text-white py-1.5 rounded-lg text-sm font-medium disabled:opacity-40"
                         >
                           {savingEdit ? "Saving…" : "Save"}
@@ -468,65 +479,33 @@ if (loading) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{exp.description}</p>
-                        <p className="text-sm text-[var(--muted)]">
-                          Paid by <span className="font-medium text-[var(--text)]">{exp.paid_by}</span>
-                        </p>
+                    <>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">{exp.description}</p>
+                          <p className="text-sm text-[var(--muted)]">
+                            Paid by <span className="font-medium text-[var(--text)]">{exp.paid_by}</span>
+                          </p>
+                        </div>
+                        <span className="font-bold text-lg shrink-0">£{Number(exp.amount).toFixed(2)}</span>
                       </div>
-                      <span className="font-bold text-lg shrink-0">£{Number(exp.amount).toFixed(2)}</span>
-                    </div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {Object.entries(exp.splits).map(([m, pct]) => (
+                          <span key={m} className="text-xs bg-[var(--bg)] text-[var(--muted)] px-2 py-0.5 rounded-full">
+                            {m}: {pct}%
+                          </span>
+                        ))}
+                      </div>
+                    </>
                   )}
 
-                  {editingSplitId === exp.id ? (
-                    <div className="mt-3 border-t border-[var(--border)] pt-3">
-                      <p className="text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wide">Edit split</p>
-                      <SplitEditor
-                        members={trip.members}
-                        splits={splitDraft}
-                        onChange={setSplitDraft}
-                        totalAmount={Number(exp.amount)}
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => setEditingSplitId(null)}
-                          className="flex-1 border border-[var(--border)] py-1.5 rounded-lg text-sm font-medium"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => saveSplits(exp.id)}
-                          disabled={Math.abs(splitTotal - 100) > 0.5}
-                          className="flex-1 bg-[var(--accent)] text-white py-1.5 rounded-lg text-sm font-medium disabled:opacity-40"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {Object.entries(exp.splits).map(([m, pct]) => (
-                        <span key={m} className="text-xs bg-[var(--bg)] text-[var(--muted)] px-2 py-0.5 rounded-full">
-                          {m}: {pct}%
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {editingSplitId !== exp.id && editingExpenseId !== exp.id && (
+                  {editingExpenseId !== exp.id && (
                     <div className="flex gap-3 mt-3 pt-3 border-t border-[var(--border)]">
                       <button
                         onClick={() => startEditExpense(exp)}
                         className="text-xs text-[var(--accent)] font-medium hover:underline"
                       >
                         Edit
-                      </button>
-                      <button
-                        onClick={() => startEditSplit(exp)}
-                        className="text-xs text-[var(--accent)] font-medium hover:underline"
-                      >
-                        Edit split
                       </button>
                       <button
                         onClick={() => deleteExpense(exp.id)}
