@@ -611,8 +611,7 @@ if (loading) {
           <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">
             <h2 className="font-semibold mb-3">Who's owed what</h2>
             <div className="flex flex-col gap-2">
-              {trip.members.map((m) => {
-                const bal = balances[m] ?? 0;
+              {Object.entries(balances).map(([m, bal]) => {
                 return (
                   <div key={m} className="flex items-center gap-3">
                     <div className="w-24 text-sm font-medium truncate">{m}</div>
