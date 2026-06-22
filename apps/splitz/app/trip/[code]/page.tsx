@@ -710,7 +710,7 @@ if (loading) {
 
           {/* Spend per member */}
           <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">
-            <h2 className="font-semibold mb-3">What each person spent</h2>
+            <h2 className="font-semibold mb-3">What each person paid</h2>
             <div className="flex flex-col gap-2">
               {trip.members.map((m) => {
                 const spent = memberSpend[m] ?? 0;
