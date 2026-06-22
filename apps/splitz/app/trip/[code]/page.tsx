@@ -241,9 +241,7 @@ if (loading) {
   const memberSpend: Record<string, number> = {};
   for (const m of trip.members) memberSpend[m] = 0;
   for (const exp of trip.expenses) {
-    for (const [m, pct] of Object.entries(exp.splits)) {
-      memberSpend[m] = (memberSpend[m] ?? 0) + Number(exp.amount) * (pct / 100);
-    }
+    memberSpend[exp.paid_by] = (memberSpend[exp.paid_by] ?? 0) + Number(exp.amount);
   }
   const splitTotal = Object.values(splitDraft).reduce((a, b) => a + b, 0);
 
