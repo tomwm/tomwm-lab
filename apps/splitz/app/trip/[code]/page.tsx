@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import SplitEditor from "@/components/SplitEditor";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 import { calcBalances, calcBalancesGlobal, calcSettlements, equalSplits, type Expense } from "@/lib/settle";
@@ -125,11 +126,7 @@ export default function TripPage() {
     load();
   }
 
-  function updateSplitDraft(member: string, value: number) {
-    setSplitDraft((prev) => ({ ...prev, [member]: value }));
-  }
-
-  if (loading) {
+if (loading) {
     return (
       <div className="flex items-center justify-center h-48 text-[var(--muted)]">
         Loading trip…
@@ -258,11 +255,7 @@ export default function TripPage() {
                     <span className="text-sm font-medium">Split</span>
                     <button
                       type="button"
-                      onClick={() =>
-                        setCustomSplits(
-                          customSplits ? null : equalSplits(trip.members)
-                        )
-                      }
+                      onClick={() => setCustomSplits(customSplits ? null : equalSplits(trip.members))}
                       className="text-xs text-[var(--accent)] underline"
                     >
                       {customSplits ? "Reset to equal" : "Customise %"}
@@ -270,40 +263,12 @@ export default function TripPage() {
                   </div>
 
                   {customSplits ? (
-                    <div className="flex flex-col gap-2">
-                      {trip.members.map((m) => (
-                        <div key={m} className="flex items-center gap-2">
-                          <span className="w-24 text-sm truncate">{m}</span>
-                          <input
-                            type="number"
-                            value={customSplits[m] ?? 0}
-                            onChange={(e) =>
-                              setCustomSplits({ ...customSplits, [m]: Number(e.target.value) })
-                            }
-                            min="0"
-                            max="100"
-                            step="1"
-                            className="flex-1 border border-[var(--border)] rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                          />
-                          <span className="text-sm text-[var(--muted)] w-4">%</span>
-                        </div>
-                      ))}
-                      <div
-                        className={`text-xs text-right mt-1 ${
-                          Math.abs(
-                            Object.values(customSplits).reduce((a, b) => a + b, 0) - 100
-                          ) > 0.5
-                            ? "text-[var(--danger)]"
-                            : "text-[var(--success)]"
-                        }`}
-                      >
-                        Total:{" "}
-                        {Object.values(customSplits)
-                          .reduce((a, b) => a + b, 0)
-                          .toFixed(0)}
-                        % {Math.abs(Object.values(customSplits).reduce((a, b) => a + b, 0) - 100) > 0.5 ? "(must equal 100%)" : "✓"}
-                      </div>
-                    </div>
+                    <SplitEditor
+                      members={trip.members}
+                      splits={customSplits}
+                      onChange={setCustomSplits}
+                      totalAmount={Number(amount) || undefined}
+                    />
                   ) : (
                     <p className="text-sm text-[var(--muted)] bg-[var(--bg)] rounded-lg px-3 py-2">
                       Equal split between all {trip.members.length} travellers
@@ -365,33 +330,12 @@ export default function TripPage() {
                   {editingSplitId === exp.id ? (
                     <div className="mt-3 border-t border-[var(--border)] pt-3">
                       <p className="text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wide">Edit split</p>
-                      <div className="flex flex-col gap-1.5">
-                        {trip.members.map((m) => (
-                          <div key={m} className="flex items-center gap-2">
-                            <span className="w-24 text-sm truncate">{m}</span>
-                            <input
-                              type="number"
-                              value={splitDraft[m] ?? 0}
-                              onChange={(e) => updateSplitDraft(m, Number(e.target.value))}
-                              min="0"
-                              max="100"
-                              step="1"
-                              className="flex-1 border border-[var(--border)] rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                            />
-                            <span className="text-sm text-[var(--muted)] w-4">%</span>
-                            <span className="text-xs text-[var(--muted)] w-14 text-right">
-                              £{((Number(exp.amount) * (splitDraft[m] ?? 0)) / 100).toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <div
-                        className={`text-xs text-right mt-1 ${
-                          Math.abs(splitTotal - 100) > 0.5 ? "text-[var(--danger)]" : "text-[var(--success)]"
-                        }`}
-                      >
-                        Total: {splitTotal.toFixed(0)}%{Math.abs(splitTotal - 100) > 0.5 ? " (must equal 100%)" : " ✓"}
-                      </div>
+                      <SplitEditor
+                        members={trip.members}
+                        splits={splitDraft}
+                        onChange={setSplitDraft}
+                        totalAmount={Number(exp.amount)}
+                      />
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={() => setEditingSplitId(null)}
@@ -468,32 +412,12 @@ export default function TripPage() {
 
             {globalSharesMode && (
               <>
-                <div className="flex flex-col gap-2">
-                  {trip.members.map((m) => (
-                    <div key={m} className="flex items-center gap-2">
-                      <span className="w-24 text-sm font-medium truncate">{m}</span>
-                      <input
-                        type="number"
-                        value={sharesDraft[m] ?? 0}
-                        onChange={(e) =>
-                          setSharesDraft((prev) => ({ ...prev, [m]: Number(e.target.value) }))
-                        }
-                        min="0"
-                        max="100"
-                        step="1"
-                        className="flex-1 border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                      />
-                      <span className="text-sm text-[var(--muted)] w-4">%</span>
-                      <span className="text-xs text-[var(--muted)] w-16 text-right">
-                        £{((totalSpend * (sharesDraft[m] ?? 0)) / 100).toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className={`text-xs text-right mt-1 ${sharesTotalValid ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-                  Total: {Object.values(sharesDraft).reduce((a, b) => a + b, 0).toFixed(0)}%
-                  {sharesTotalValid ? " ✓" : " (must equal 100%)"}
-                </div>
+                <SplitEditor
+                  members={trip.members}
+                  splits={sharesDraft}
+                  onChange={setSharesDraft}
+                  totalAmount={totalSpend}
+                />
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => setSharesDraft(equalSplits(trip.members))}
