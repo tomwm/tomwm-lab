@@ -658,6 +658,30 @@ if (loading) {
               </div>
             )}
           </div>
+
+          {/* How is this calculated */}
+          <details className="group bg-white rounded-2xl border border-[var(--border)] shadow-sm">
+            <summary className="flex items-center justify-between p-5 cursor-pointer list-none select-none">
+              <span className="font-semibold">How is this calculated?</span>
+              <span className="text-[var(--muted)] text-lg transition-transform group-open:rotate-180">⌃</span>
+            </summary>
+            <div className="px-5 pb-5 flex flex-col gap-4 text-sm text-[var(--muted)] border-t border-[var(--border)] pt-4">
+              <div>
+                <p className="font-semibold text-[var(--text)] mb-1">1. Individual balances</p>
+                <p>For each expense, every member is charged their share and the person who paid is credited the full amount. After all expenses, a positive balance means that person is owed money; a negative balance means they owe money.</p>
+              </div>
+              {(trip.couples || []).length > 0 && (
+                <div>
+                  <p className="font-semibold text-[var(--text)] mb-1">2. Linked finances</p>
+                  <p>Linked members have their balances added together before settling, so they're treated as one financial unit. If one is owed £700 and the other owes £300, the couple is net owed £400 — others only need to settle with them once.</p>
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-[var(--text)] mb-1">{(trip.couples || []).length > 0 ? "3." : "2."} Minimising transactions</p>
+                <p>Balances are split into people who are owed money and people who owe money. The algorithm repeatedly matches the largest debtor with the largest creditor, recording a payment and moving on. This keeps the number of transfers as small as possible.</p>
+              </div>
+            </div>
+          </details>
         </div>
       )}
     </div>
