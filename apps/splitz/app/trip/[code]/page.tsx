@@ -224,6 +224,13 @@ if (loading) {
   const settlements = calcSettlements(balances);
   const sharesTotalValid = Math.abs(Object.values(sharesDraft).reduce((a, b) => a + b, 0) - 100) <= 0.5;
   const totalSpend = trip.expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const memberSpend: Record<string, number> = {};
+  for (const m of trip.members) memberSpend[m] = 0;
+  for (const exp of trip.expenses) {
+    for (const [m, pct] of Object.entries(exp.splits)) {
+      memberSpend[m] = (memberSpend[m] ?? 0) + Number(exp.amount) * (pct / 100);
+    }
+  }
   const splitTotal = Object.values(splitDraft).reduce((a, b) => a + b, 0);
 
   return (
@@ -662,6 +669,28 @@ if (loading) {
               })()}
             </div>
           )}
+
+          {/* Spend per member */}
+          <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">
+            <h2 className="font-semibold mb-3">What each person spent</h2>
+            <div className="flex flex-col gap-2">
+              {trip.members.map((m) => {
+                const spent = memberSpend[m] ?? 0;
+                return (
+                  <div key={m} className="flex items-center gap-3">
+                    <div className="w-24 text-sm font-medium truncate">{m}</div>
+                    <div className="flex-1 h-2 bg-[var(--bg)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--accent)]"
+                        style={{ width: `${totalSpend > 0 ? (spent / totalSpend) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <div className="text-sm font-semibold w-20 text-right">£{spent.toFixed(2)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Balances */}
           <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">
