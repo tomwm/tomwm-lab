@@ -14,6 +14,7 @@ type Trip = {
   members: string[];
   member_shares: Record<string, number>;
   couples: [string, string][];
+  currency: string;
   expenses: Expense[];
 };
 
@@ -55,6 +56,9 @@ export default function TripPage() {
   // Couples
   const [couplesDraft, setCouplesDraft] = useState<[string, string][]>([]);
   const [savingCouples, setSavingCouples] = useState(false);
+
+  // Currency
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
   // Global member shares
   const [globalSharesMode, setGlobalSharesMode] = useState(false);
@@ -161,6 +165,16 @@ export default function TripPage() {
       setAddMemberError(data.error ?? "Failed to add member");
     }
     setAddingMember(false);
+  }
+
+  async function saveCurrency(symbol: string) {
+    await fetch(`${BASE}/api/trips/${code}/currency`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currency: symbol }),
+    });
+    setShowCurrencyPicker(false);
+    load();
   }
 
   async function saveCouples(newCouples: [string, string][]) {
@@ -279,6 +293,7 @@ if (loading) {
               </form>
             )}
           </div>
+          <div className="flex flex-col gap-2 items-end">
           <button
             onClick={copyCode}
             className="flex flex-col items-center bg-[var(--accent-light)] rounded-xl px-4 py-2 hover:bg-[var(--accent)] hover:text-white group transition-colors"
@@ -290,11 +305,33 @@ if (loading) {
               {copied ? "Copied!" : "Tap to copy"}
             </span>
           </button>
+          <button
+            onClick={() => setShowCurrencyPicker((v) => !v)}
+            className="text-xs text-[var(--accent)] font-semibold hover:underline self-end"
+          >
+            {trip.currency} · Change currency
+          </button>
+          </div>
         </div>
+
+        {showCurrencyPicker && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {["£", "$", "€", "¥", "A$", "C$", "Fr", "kr"].map((sym) => (
+              <button
+                key={sym}
+                onClick={() => saveCurrency(sym)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ${trip.currency === sym ? "bg-[var(--accent)] text-white border-[var(--accent)]" : "border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+              >
+                {sym}
+              </button>
+            ))}
+            <button onClick={() => setShowCurrencyPicker(false)} className="px-3 py-1.5 rounded-lg text-sm text-[var(--muted)] hover:text-[var(--text)]">Cancel</button>
+          </div>
+        )}
 
         <div className="flex gap-4 mt-4 text-sm">
           <div className="flex-1 bg-[var(--bg)] rounded-xl p-3 text-center">
-            <div className="font-bold text-lg">£{totalSpend.toFixed(2)}</div>
+            <div className="font-bold text-lg">{trip.currency}{totalSpend.toFixed(2)}</div>
             <div className="text-[var(--muted)]">Total spend</div>
           </div>
           <div className="flex-1 bg-[var(--bg)] rounded-xl p-3 text-center">
@@ -342,7 +379,7 @@ if (loading) {
                 />
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">£</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">{trip.currency}</span>
                     <input
                       type="number"
                       value={amount}
@@ -384,6 +421,7 @@ if (loading) {
                       splits={customSplits}
                       onChange={setCustomSplits}
                       totalAmount={Number(amount) || undefined}
+                      currency={trip.currency}
                     />
                   ) : (
                     <p className="text-sm text-[var(--muted)] bg-[var(--bg)] rounded-lg px-3 py-2">
@@ -467,6 +505,7 @@ if (loading) {
                           splits={splitDraft}
                           onChange={setSplitDraft}
                           totalAmount={Number(editAmount) || 0}
+                          currency={trip.currency}
                         />
                       </div>
                       <div className="flex gap-2 mt-1">
@@ -494,7 +533,7 @@ if (loading) {
                             Paid by <span className="font-medium text-[var(--text)]">{exp.paid_by}</span>
                           </p>
                         </div>
-                        <span className="font-bold text-lg shrink-0">£{Number(exp.amount).toFixed(2)}</span>
+                        <span className="font-bold text-lg shrink-0">{trip.currency}{Number(exp.amount).toFixed(2)}</span>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {Object.entries(exp.splits).map(([m, pct]) => (
@@ -561,6 +600,7 @@ if (loading) {
                   splits={sharesDraft}
                   onChange={setSharesDraft}
                   totalAmount={totalSpend}
+                  currency={trip.currency}
                 />
                 <div className="flex gap-2 mt-3">
                   <button
@@ -685,7 +725,7 @@ if (loading) {
                         style={{ width: `${totalSpend > 0 ? (spent / totalSpend) * 100 : 0}%` }}
                       />
                     </div>
-                    <div className="text-sm font-semibold w-20 text-right">£{spent.toFixed(2)}</div>
+                    <div className="text-sm font-semibold w-20 text-right">{trip.currency}{spent.toFixed(2)}</div>
                   </div>
                 );
               })}
@@ -713,7 +753,7 @@ if (loading) {
                         bal >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"
                       }`}
                     >
-                      {bal >= 0 ? "+" : ""}£{bal.toFixed(2)}
+                      {bal >= 0 ? "+" : ""}{trip.currency}{Math.abs(bal).toFixed(2)}
                     </div>
                   </div>
                 );
@@ -737,7 +777,7 @@ if (loading) {
                     <span className="font-medium">{s.from}</span>
                     <span className="text-[var(--muted)]">pays</span>
                     <span className="font-medium">{s.to}</span>
-                    <span className="ml-auto font-bold text-[var(--accent)]">£{s.amount.toFixed(2)}</span>
+                    <span className="ml-auto font-bold text-[var(--accent)]">{trip.currency}{s.amount.toFixed(2)}</span>
                   </div>
                 ))}
               </div>

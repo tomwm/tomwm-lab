@@ -22,6 +22,7 @@ export async function initDB() {
   // migrate existing tables
   await db.execute(`ALTER TABLE trips ADD COLUMN member_shares TEXT NOT NULL DEFAULT '{}'`).catch(() => {});
   await db.execute(`ALTER TABLE trips ADD COLUMN couples TEXT NOT NULL DEFAULT '[]'`).catch(() => {});
+  await db.execute(`ALTER TABLE trips ADD COLUMN currency TEXT NOT NULL DEFAULT '£'`).catch(() => {});
   await db.execute(`
     CREATE TABLE IF NOT EXISTS expenses (
       id TEXT PRIMARY KEY,
@@ -73,6 +74,7 @@ export async function getTrip(code: string) {
     members: parseMembers(row.members as string),
     member_shares: parseSplits((row.member_shares as string) || "{}"),
     couples: JSON.parse((row.couples as string) || "[]") as [string, string][],
+    currency: (row.currency as string) || "£",
   };
 }
 
@@ -129,6 +131,15 @@ export async function updateExpense(id: string, description: string, amount: num
     args: [description, amount, paidBy, id],
   });
   return { id, description, amount, paid_by: paidBy };
+}
+
+export async function updateCurrency(tripId: string, currency: string) {
+  const db = getClient();
+  await db.execute({
+    sql: `UPDATE trips SET currency = ? WHERE id = ?`,
+    args: [currency, tripId],
+  });
+  return currency;
 }
 
 export async function updateCouples(tripId: string, couples: [string, string][]) {

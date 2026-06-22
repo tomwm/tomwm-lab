@@ -5,9 +5,10 @@ type Props = {
   splits: Record<string, number>;
   onChange: (splits: Record<string, number>) => void;
   totalAmount?: number;
+  currency?: string;
 };
 
-export default function SplitEditor({ members, splits, onChange, totalAmount }: Props) {
+export default function SplitEditor({ members, splits, onChange, totalAmount, currency = "£" }: Props) {
   const total = Object.values(splits).reduce((a, b) => a + b, 0);
   const isValid = Math.abs(total - 100) <= 0.5;
 
@@ -61,7 +62,7 @@ export default function SplitEditor({ members, splits, onChange, totalAmount }: 
             </div>
             {totalAmount !== undefined && (
               <span className="text-xs text-[var(--muted)] w-14 text-right shrink-0">
-                £{((totalAmount * pct) / 100).toFixed(2)}
+                {currency}{((totalAmount * pct) / 100).toFixed(2)}
               </span>
             )}
           </div>
