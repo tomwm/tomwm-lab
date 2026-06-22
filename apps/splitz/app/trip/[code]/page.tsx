@@ -39,6 +39,13 @@ export default function TripPage() {
   const [editingSplitId, setEditingSplitId] = useState<string | null>(null);
   const [splitDraft, setSplitDraft] = useState<Record<string, number>>({});
 
+  // Edit expense details
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editDesc, setEditDesc] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editPaidBy, setEditPaidBy] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
   // Add member
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
@@ -111,6 +118,26 @@ export default function TripPage() {
   function startEditSplit(expense: Expense) {
     setEditingSplitId(expense.id);
     setSplitDraft({ ...expense.splits });
+  }
+
+  function startEditExpense(expense: Expense) {
+    setEditingExpenseId(expense.id);
+    setEditDesc(expense.description);
+    setEditAmount(String(expense.amount));
+    setEditPaidBy(expense.paid_by);
+  }
+
+  async function saveExpenseEdit(id: string) {
+    if (!editDesc.trim() || !editAmount || !editPaidBy) return;
+    setSavingEdit(true);
+    await fetch(`${BASE}/api/expenses/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: editDesc.trim(), amount: Number(editAmount), paidBy: editPaidBy }),
+    });
+    setSavingEdit(false);
+    setEditingExpenseId(null);
+    load();
   }
 
   async function addMember(e: React.FormEvent) {
@@ -398,15 +425,59 @@ if (loading) {
             <div className="flex flex-col gap-3">
               {trip.expenses.map((exp) => (
                 <div key={exp.id} className="bg-white rounded-2xl border border-[var(--border)] p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{exp.description}</p>
-                      <p className="text-sm text-[var(--muted)]">
-                        Paid by <span className="font-medium text-[var(--text)]">{exp.paid_by}</span>
-                      </p>
+                  {editingExpenseId === exp.id ? (
+                    <div className="flex flex-col gap-2">
+                      <input
+                        className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        placeholder="Description"
+                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(e.target.value)}
+                          placeholder="Amount"
+                        />
+                        <select
+                          className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                          value={editPaidBy}
+                          onChange={(e) => setEditPaidBy(e.target.value)}
+                        >
+                          {trip.members.map((m) => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingExpenseId(null)}
+                          className="flex-1 border border-[var(--border)] py-1.5 rounded-lg text-sm font-medium"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => saveExpenseEdit(exp.id)}
+                          disabled={savingEdit || !editDesc.trim() || !editAmount}
+                          className="flex-1 bg-[var(--accent)] text-white py-1.5 rounded-lg text-sm font-medium disabled:opacity-40"
+                        >
+                          {savingEdit ? "Saving…" : "Save"}
+                        </button>
+                      </div>
                     </div>
-                    <span className="font-bold text-lg shrink-0">£{Number(exp.amount).toFixed(2)}</span>
-                  </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{exp.description}</p>
+                        <p className="text-sm text-[var(--muted)]">
+                          Paid by <span className="font-medium text-[var(--text)]">{exp.paid_by}</span>
+                        </p>
+                      </div>
+                      <span className="font-bold text-lg shrink-0">£{Number(exp.amount).toFixed(2)}</span>
+                    </div>
+                  )}
 
                   {editingSplitId === exp.id ? (
                     <div className="mt-3 border-t border-[var(--border)] pt-3">
@@ -443,8 +514,14 @@ if (loading) {
                     </div>
                   )}
 
-                  {editingSplitId !== exp.id && (
+                  {editingSplitId !== exp.id && editingExpenseId !== exp.id && (
                     <div className="flex gap-3 mt-3 pt-3 border-t border-[var(--border)]">
+                      <button
+                        onClick={() => startEditExpense(exp)}
+                        className="text-xs text-[var(--accent)] font-medium hover:underline"
+                      >
+                        Edit
+                      </button>
                       <button
                         onClick={() => startEditSplit(exp)}
                         className="text-xs text-[var(--accent)] font-medium hover:underline"

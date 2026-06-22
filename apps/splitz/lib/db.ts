@@ -122,6 +122,15 @@ export async function updateExpenseSplits(id: string, splits: Record<string, num
   return { id, splits };
 }
 
+export async function updateExpense(id: string, description: string, amount: number, paidBy: string) {
+  const db = getClient();
+  await db.execute({
+    sql: `UPDATE expenses SET description = ?, amount = ?, paid_by = ? WHERE id = ?`,
+    args: [description, amount, paidBy, id],
+  });
+  return { id, description, amount, paid_by: paidBy };
+}
+
 export async function updateCouples(tripId: string, couples: [string, string][]) {
   const db = getClient();
   await db.execute({
