@@ -53,7 +53,7 @@ export default function SplitEditor({ members, splits, onChange, totalAmount, cu
                 value={pct}
                 min="0"
                 max="100"
-                step="1"
+                step="any"
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => handleChange(m, parseFloat(e.target.value))}
                 className="w-full border border-[var(--border)] rounded-lg px-2 py-1.5 text-sm pr-7 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
