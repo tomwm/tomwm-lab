@@ -1,0 +1,15 @@
+/.next/
+/node_modules/
+/next-env.d.ts
+*.tsbuildinfo
+.env
+.env*.local
+
+# Belt and braces: the API key and all Garmin data live outside the repo
+# (see src/lib/garmin/config.ts), but never let a stray copy be committed.
+api-key
+*.db
+*.db-*
+*.fit
+/data/
+/samples/

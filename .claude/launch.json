@@ -55,6 +55,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:splitz"],
       "port": 3009
+    },
+    {
+      "name": "garmin-me",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:garmin-me"],
+      "port": 3015
     }
   ]
 }
