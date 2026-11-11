@@ -9,10 +9,15 @@ recovery, strength and daily health. It reads from Garmin's official
 From the repo root:
 
 ```bash
-npm install
-npm -w apps/garmin-me run garmin:key   # once: paste your key (input is hidden)
-npm run dev:garmin-me                  # then open http://localhost:3015
+npm --prefix apps/garmin-me install               # once: this app has its own dependencies
+npm --prefix apps/garmin-me run garmin:key        # once: paste your key (input is hidden)
+npm run dev:garmin-me                             # then open http://localhost:3015
 ```
+
+This app is deliberately **not** part of the repo's npm workspace (see
+`"!apps/garmin-me"` in the root `package.json`). It is local-only and never
+built for the website, and keeping it out means its dependencies can't
+disturb the shared lockfile the site deploys from.
 
 The first page load starts a sync. Recent data appears within a minute.
 Choosing a longer range loads older history in the background (see *Rate

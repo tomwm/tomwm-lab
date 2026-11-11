@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "!apps/garmin-me"
   ],
   "scripts": {
     "build": "node build.js",
@@ -18,7 +19,7 @@
     "dev:only-moos": "npm -w apps/only-moos run dev",
     "dev:history-timeline": "npm -w apps/history-timeline run dev",
     "dev:splitz": "npm -w apps/splitz run dev",
-    "dev:garmin-me": "npm -w apps/garmin-me run dev"
+    "dev:garmin-me": "npm --prefix apps/garmin-me run dev"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0"
