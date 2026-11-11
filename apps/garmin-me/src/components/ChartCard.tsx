@@ -24,6 +24,8 @@ type Props = {
   /** Shaded reference range, e.g. Garmin's HRV baseline. */
   band?: { low: number; high: number; label: string }
   refLine?: { y: number; label: string }
+  /** Join points across days with no value (for things measured now and then, like weight). */
+  connectGaps?: boolean
   height?: number
 }
 
@@ -46,7 +48,7 @@ function TooltipBox({ active, payload, series, fmt }: { active?: boolean; payloa
   )
 }
 
-export function ChartCard({ title, subtitle, source, data, series, kind, fmt, stacked, reversed, band, refLine, height = 220 }: Props) {
+export function ChartCard({ title, subtitle, source, data, series, kind, fmt, stacked, reversed, band, refLine, connectGaps, height = 220 }: Props) {
   const [table, setTable] = useState(false)
   const all = data.flatMap((r) => series.map((s) => r[s.key])).filter((v): v is number => typeof v === 'number')
   const hasData = kind === 'bar' ? all.some((v) => v > 0) : all.length > 0
@@ -61,7 +63,7 @@ export function ChartCard({ title, subtitle, source, data, series, kind, fmt, st
     const lo = Math.min(...all, band?.low ?? Infinity)
     const hi = Math.max(...all, band?.high ?? -Infinity)
     const span = Math.max(hi - lo, 1)
-    const steps = fmt === 'pace' ? [5, 10, 15, 30, 60, 120, 300] : [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000]
+    const steps = fmt === 'pace' ? [5, 10, 15, 30, 60, 120, 300] : [...(fmt === 'kg' || fmt === 'pct' ? [0.5] : []), 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000]
     const step = steps.find((x) => span / x <= 4) ?? steps[steps.length - 1]
     let a = Math.max(0, Math.floor((lo - span * 0.05) / step) * step)
     let b = Math.ceil((hi + span * 0.05) / step) * step
@@ -156,7 +158,7 @@ export function ChartCard({ title, subtitle, source, data, series, kind, fmt, st
                 domain={domain}
                 ticks={ticks}
                 reversed={reversed}
-                allowDecimals={fmt === 'hours'}
+                allowDecimals={fmt === 'hours' || fmt === 'kg' || fmt === 'pct'}
                 tick={{ fill: 'var(--muted)', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
@@ -174,7 +176,7 @@ export function ChartCard({ title, subtitle, source, data, series, kind, fmt, st
                   stroke="var(--muted)"
                   strokeWidth={1}
                   ifOverflow="extendDomain"
-                  label={{ value: refLine.label, position: 'insideTopRight', fill: 'var(--muted)', fontSize: 11 }}
+                  label={{ value: refLine.label, position: 'insideTopLeft', fill: 'var(--muted)', fontSize: 11 }}
                 />
               )}
               {kind === 'bar' &&
@@ -203,14 +205,14 @@ export function ChartCard({ title, subtitle, source, data, series, kind, fmt, st
                     strokeWidth={2}
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    connectNulls={false}
+                    connectNulls={!!connectGaps}
                     isAnimationActive={false}
                     activeDot={{ r: 5, stroke: 'var(--surface)', strokeWidth: 2 }}
                     dot={(p: any) => {
                       const { cx, cy, index } = p
                       const v = data[index]?.[s.key]
                       const lone = typeof data[index - 1]?.[s.key] !== 'number' && typeof data[index + 1]?.[s.key] !== 'number'
-                      if (typeof v !== 'number' || cy == null || (!sparse && !lone)) return <g key={index} />
+                      if (typeof v !== 'number' || cy == null || (!sparse && !lone && !(connectGaps && all.length <= 60))) return <g key={index} />
                       return <circle key={index} cx={cx} cy={cy} r={sparse && data.length <= 31 ? 4 : 3} fill={s.color} stroke="var(--surface)" strokeWidth={2} />
                     }}
                   />

@@ -1,18 +1,22 @@
 import type { Delta } from '@/lib/metrics'
 
-export type Source = 'garmin' | 'calc'
+export type Source = 'garmin' | 'estimate'
 
+export const SOURCE_TEXT: Record<Source, string> = {
+  garmin: "Garmin's own data, including simple totals and averages of it",
+  estimate: "Estimated by this app from Garmin data. Garmin doesn't report this figure, so treat it as a guide",
+}
+
+/** A small dot saying where a figure comes from: grey for Garmin, amber for an estimate. */
 export function SourceTag({ source }: { source: Source }) {
   return (
-    <span
-      className="shrink-0 cursor-help rounded-full border border-line px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-muted"
-      title={
-        source === 'garmin'
-          ? 'Reported directly by Garmin'
-          : 'Calculated in this app from Garmin data (totals, averages, comparisons). An estimate, not a Garmin metric.'
-      }
-    >
-      {source === 'garmin' ? 'Garmin' : 'Calc'}
+    <span className="group relative inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center" title={SOURCE_TEXT[source]}>
+      <span
+        className="h-[7px] w-[7px] rounded-full"
+        style={source === 'garmin' ? { background: 'var(--muted)' } : { background: 'var(--s4)' }}
+        role="img"
+        aria-label={source === 'garmin' ? 'Garmin data' : 'Estimate'}
+      />
     </span>
   )
 }

@@ -26,17 +26,17 @@ function Recovery({ period, data }: Ctx) {
 
   const base = latest(data, (d) => d.hrvBaseLow)
   const band = base && base.day.hrvBaseHigh !== null ? { low: base.value, high: base.day.hrvBaseHigh, label: "Garmin's balanced range for you" } : undefined
-  const per = period.weeklyTrend ? 'Weekly average' : 'Nightly'
-  const perDay = period.weeklyTrend ? 'Weekly average' : 'Daily'
+  const per = period.weeklyTrend ? `${period.avgLabel}` : 'Nightly'
+  const perDay = period.weeklyTrend ? `${period.avgLabel}` : 'Daily'
 
   return (
     <>
-      <Section title={`Averages · last ${period.label}`}>
+      <Section title={`Averages · ${period.title}`}>
         <Grid>
-          <Kpi label="Overnight HRV" value={hrv.value !== null ? fmtInt(hrv.value) : null} unit="ms" sub={hrv.n ? of(hrv.n, 'nights') : undefined} delta={hrv.delta} spark={hrv.spark} color={C.hrv} source="calc" />
-          <Kpi label="Resting HR" value={rhr.value !== null ? fmtInt(rhr.value) : null} unit="bpm" sub={rhr.n ? of(rhr.n, 'days') : undefined} delta={rhr.delta} spark={rhr.spark} color={C.heart} source="calc" />
-          <Kpi label="Sleep" value={sleep.value !== null ? fmtHours(sleep.value) : null} sub={sleep.n ? of(sleep.n, 'nights') : undefined} delta={sleep.delta} spark={sleep.spark} color={C.sleep} source="calc" />
-          <Kpi label="Sleep score" value={score.value !== null ? fmtInt(score.value) : null} sub={score.n ? of(score.n, 'nights') : undefined} delta={score.delta} spark={score.spark} color={C.sleep} source="calc" />
+          <Kpi label="Overnight HRV" value={hrv.value !== null ? fmtInt(hrv.value) : null} unit="ms" sub={hrv.n ? of(hrv.n, 'nights') : undefined} delta={hrv.delta} spark={hrv.spark} color={C.hrv} source="garmin" />
+          <Kpi label="Resting HR" value={rhr.value !== null ? fmtInt(rhr.value) : null} unit="bpm" sub={rhr.n ? of(rhr.n, 'days') : undefined} delta={rhr.delta} spark={rhr.spark} color={C.heart} source="garmin" />
+          <Kpi label="Sleep" value={sleep.value !== null ? fmtHours(sleep.value) : null} sub={sleep.n ? of(sleep.n, 'nights') : undefined} delta={sleep.delta} spark={sleep.spark} color={C.sleep} source="garmin" />
+          <Kpi label="Sleep score" value={score.value !== null ? fmtInt(score.value) : null} sub={score.n ? of(score.n, 'nights') : undefined} delta={score.delta} spark={score.spark} color={C.sleep} source="garmin" />
         </Grid>
       </Section>
 
@@ -51,7 +51,7 @@ function Recovery({ period, data }: Ctx) {
         <Grid cols={2}>
           <ChartCard
             title="Sleep stages"
-            subtitle={period.weeklyTrend ? 'Weekly average per night' : 'Per night (date you woke up)'}
+            subtitle={period.weeklyTrend ? `${period.avgLabel} per night` : 'Per night (date you woke up)'}
             source="garmin"
             kind="bar"
             stacked

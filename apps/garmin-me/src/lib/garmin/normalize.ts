@@ -8,6 +8,9 @@
  */
 type Raw = Record<string, any>
 
+/** Changes whenever this module is reloaded, so cached normalised data is rebuilt after an edit here. */
+export const NORMALIZER_STAMP = String(Date.now())
+
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 const hours = (sec: unknown): number | null => {
   const n = num(sec)
@@ -111,6 +114,10 @@ export type Day = {
   intensityMod: number | null
   intensityVig: number | null
   spo2: number | null
+  /** All distance on foot that day (walking, running, everything), km. */
+  distanceKm: number | null
+  /** Metres climbed that day, from the watch's barometer ("floors"). */
+  climbM: number | null
   // sleep for the night ending this morning
   sleepH: number | null
   deepH: number | null
@@ -119,6 +126,11 @@ export type Day = {
   awakeH: number | null
   sleepScore: number | null
   sleepQuality: string | null
+  // weigh-in (the day's latest reading)
+  weightKg: number | null
+  bodyFatPct: number | null
+  muscleKg: number | null
+  bmi: number | null
   // overnight HRV
   hrv: number | null
   hrvWeekly: number | null
@@ -130,8 +142,9 @@ export type Day = {
 export function emptyDay(date: string): Day {
   return {
     date, steps: null, stepGoal: null, restingHr: null, stressAvg: null, bbHigh: null, bbLow: null,
-    bbWake: null, activeKcal: null, intensityMod: null, intensityVig: null, spo2: null, sleepH: null,
+    bbWake: null, activeKcal: null, intensityMod: null, intensityVig: null, spo2: null, distanceKm: null, climbM: null, sleepH: null,
     deepH: null, lightH: null, remH: null, awakeH: null, sleepScore: null, sleepQuality: null,
+    weightKg: null, bodyFatPct: null, muscleKg: null, bmi: null,
     hrv: null, hrvWeekly: null, hrvStatus: null, hrvBaseLow: null, hrvBaseHigh: null,
   }
 }
@@ -151,6 +164,9 @@ export function applySummary(d: Day, s: Raw | null) {
   d.intensityMod = num(s.moderateIntensityMinutes)
   d.intensityVig = num(s.vigorousIntensityMinutes)
   d.spo2 = num(s.averageSpo2)
+  const dist = num(s.totalDistanceMeters)
+  d.distanceKm = dist === null ? null : dist / 1000
+  d.climbM = num(s.floorsAscendedInMeters)
 }
 
 export function applySleep(d: Day, s: Raw | null) {
@@ -172,4 +188,23 @@ export function applyHrv(d: Day, h: Raw | null) {
   d.hrvStatus = typeof h.status === 'string' ? h.status : null
   d.hrvBaseLow = num(h.baseline?.balancedLow)
   d.hrvBaseHigh = num(h.baseline?.balancedUpper)
+}
+
+export function applyWeight(d: Day, w: Raw | null) {
+  const latest = w?.latestWeight
+  if (!latest) return
+  // Garmin stores mass in grams.
+  const kg = (v: unknown) => {
+    const n = num(v)
+    return n === null || n <= 0 ? null : n / 1000
+  }
+  d.weightKg = kg(latest.weight)
+  // A weigh-in typed in by hand has no body composition; Garmin sends 0, not null.
+  const positive = (v: unknown) => {
+    const n = num(v)
+    return n === null || n <= 0 ? null : n
+  }
+  d.bodyFatPct = positive(latest.bodyFat)
+  d.muscleKg = kg(latest.muscleMass)
+  d.bmi = positive(latest.bmi)
 }

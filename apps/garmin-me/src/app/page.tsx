@@ -77,12 +77,12 @@ function Overview({ period, data }: Ctx) {
         </Grid>
       </Section>
 
-      <Section title={`Training · last ${period.label}`}>
+      <Section title={`Training · ${period.title}`}>
         <Grid>
-          <Kpi label="Active time" value={time.value ? fmtHours(time.value) : time.n ? '0m' : null} delta={time.delta} spark={time.spark} source="calc" />
-          <Kpi label="Sessions" value={fmtInt(sessions.value ?? 0)} delta={sessions.delta} spark={sessions.spark} source="calc" />
-          <Kpi label="Run distance" value={fmtOne(runKm.value ?? 0)} unit="km" delta={runKm.delta} spark={runKm.spark} color={SPORT_COLOR.running} source="calc" />
-          <Kpi label="Training load" value={load.n ? fmtInt(load.value ?? 0) : null} sub="Sum of Garmin's per-session load" delta={load.delta} spark={load.spark} source="calc" />
+          <Kpi label="Active time" value={time.value ? fmtHours(time.value) : time.n ? '0m' : null} delta={time.delta} spark={time.spark} source="garmin" />
+          <Kpi label="Sessions" value={fmtInt(sessions.value ?? 0)} delta={sessions.delta} spark={sessions.spark} source="garmin" />
+          <Kpi label="Run distance" value={fmtOne(runKm.value ?? 0)} unit="km" delta={runKm.delta} spark={runKm.spark} color={SPORT_COLOR.running} source="garmin" />
+          <Kpi label="Training load" value={load.n ? fmtInt(load.value ?? 0) : null} sub="Sum of Garmin's per-session load" delta={load.delta} spark={load.spark} source="garmin" />
         </Grid>
       </Section>
 
@@ -91,7 +91,7 @@ function Overview({ period, data }: Ctx) {
           <ChartCard
             title="Training time by sport"
             subtitle={`Hours per ${period.bucketNoun}`}
-            source="calc"
+            source="garmin"
             kind="bar"
             stacked
             fmt="hours"
@@ -100,7 +100,7 @@ function Overview({ period, data }: Ctx) {
           />
           <ChartCard
             title="Overnight HRV"
-            subtitle={period.weeklyTrend ? 'Weekly average, ms' : 'Nightly average, ms'}
+            subtitle={period.weeklyTrend ? `${period.avgLabel}, ms` : 'Nightly average, ms'}
             source="garmin"
             kind="line"
             fmt="ms"
@@ -110,7 +110,7 @@ function Overview({ period, data }: Ctx) {
           />
           <ChartCard
             title="Sleep duration"
-            subtitle={period.weeklyTrend ? 'Weekly average per night' : 'Per night (date you woke up)'}
+            subtitle={period.weeklyTrend ? `${period.avgLabel} per night` : 'Per night (date you woke up)'}
             source="garmin"
             kind="bar"
             fmt="hours"
@@ -119,7 +119,7 @@ function Overview({ period, data }: Ctx) {
           />
           <ChartCard
             title="Resting heart rate"
-            subtitle={period.weeklyTrend ? 'Weekly average, bpm' : 'Daily, bpm'}
+            subtitle={period.weeklyTrend ? `${period.avgLabel}, bpm` : 'Daily, bpm'}
             source="garmin"
             kind="line"
             fmt="bpm"

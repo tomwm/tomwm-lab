@@ -1,7 +1,7 @@
 import { hasApiKey } from '@/lib/garmin/client'
 import { MAX_SYNC_DAYS } from '@/lib/garmin/sync'
 import { loadData, type Dataset } from '@/lib/data'
-import { addDays, diffDays, fmtDay, today } from '@/lib/dates'
+import { addDays, diffDays, fmtDate, fmtDay, today } from '@/lib/dates'
 import { makePeriod, parseRange, type Period } from '@/lib/metrics'
 import { RangeSwitch, SyncControl, ThemeToggle } from './Controls'
 
@@ -15,19 +15,24 @@ export type Ctx = { period: Period; data: Dataset }
 export async function Shell({
   title,
   searchParams,
+  allTime,
   children,
 }: {
   title: string
   searchParams: PageProps['searchParams']
+  /** Page uses everything in the cache, so the range switch is hidden. */
+  allTime?: boolean
   children: (ctx: Ctx) => React.ReactNode
 }) {
-  const period = makePeriod(parseRange((await searchParams).range))
   const hasKey = await hasApiKey()
   const data = loadData()
+  const period = makePeriod(parseRange((await searchParams).range), today(), data.syncedFrom)
+  const firstYear = +(data.syncedFrom ?? today()).slice(0, 4)
+  const years = Array.from({ length: +today().slice(0, 4) - firstYear + 1 }, (_, i) => +today().slice(0, 4) - i)
   const empty = data.activities.length === 0 && data.days.size === 0
 
   const earliest = addDays(today(), -(MAX_SYNC_DAYS - 1))
-  const wantFrom = period.prevStart < earliest ? earliest : period.prevStart
+  const wantFrom = allTime || period.prevStart < earliest ? earliest : period.prevStart
   const wantDays = diffDays(wantFrom, today()) + 1
   const partial = !empty && (!data.syncedFrom || data.syncedFrom > period.start)
 
@@ -37,11 +42,13 @@ export async function Shell({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted">
-            {fmtDay(period.start)} – {fmtDay(period.end)} · last {period.label}
+            {allTime
+              ? 'Playful views of your data. Each tile says which dates it covers.'
+              : `${fmtDate(period.start)} – ${fmtDate(period.end)} · ${period.title}`}
           </p>
         </div>
         <div className="flex flex-wrap items-start justify-end gap-3">
-          <RangeSwitch range={period.range} />
+          {!allTime && <RangeSwitch range={period.range} years={years} />}
           <ThemeToggle />
           <SyncControl wantFrom={wantFrom} wantDays={wantDays} />
         </div>
@@ -65,11 +72,11 @@ export async function Shell({
         </Notice>
       ) : (
         <>
-          {partial && (
+          {partial && !allTime && (
             <p className="mb-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink-2">
-              Older history for this range is still being loaded
-              {data.syncedFrom ? ` (cached back to ${fmtDay(data.syncedFrom)})` : ''}. Charts will fill in when the sync
-              finishes.
+              {period.start < earliest
+                ? `Only history back to ${data.syncedFrom ? fmtDate(data.syncedFrom) : 'recently'} is loaded, so part of this range is empty. To load older years, run npm run garmin:backfill once.`
+                : `Older history for this range is still being loaded${data.syncedFrom ? ` (cached back to ${fmtDay(data.syncedFrom)})` : ''}. Charts will fill in when the sync finishes.`}
             </p>
           )}
           {children({ period, data })}

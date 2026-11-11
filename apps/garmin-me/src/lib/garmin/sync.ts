@@ -3,6 +3,7 @@
  *
  * - Activities: one paged list call covers the whole window.
  * - HRV: range endpoint, fetched in 28-day chunks.
+ * - Weight: one range request for the whole history.
  * - Daily summary + sleep: one call per day each (paced by the client to stay
  *   under Garmin's ~100 requests/minute, so a full 400-day backfill takes
  *   around ten minutes, once). A day is fetched once and
@@ -41,6 +42,9 @@ type State = Omit<SyncStatus, 'hasKey' | 'lastSyncAt' | 'syncedFrom'>
 const g = globalThis as unknown as { __garminSync?: State }
 const state = (g.__garminSync ??= { running: false, phase: '', done: 0, total: 0, error: null, failedDays: 0 })
 
+/** Live progress of the sync running in this process. */
+export const syncProgress = () => ({ phase: state.phase, done: state.done, total: state.total, failed: state.failedDays })
+
 export async function getSyncStatus(): Promise<SyncStatus> {
   const last = getMeta('last_sync_at')
   return { ...state, hasKey: await hasApiKey(), lastSyncAt: last ? Number(last) : null, syncedFrom: getMeta('synced_from') }
@@ -51,7 +55,7 @@ export function startSync(days: number) {
   if (state.running) return
   const n = Math.max(3, Math.min(MAX_SYNC_DAYS, Math.round(days) || 30))
   Object.assign(state, { running: true, phase: 'activities', done: 0, total: 0, error: null, failedDays: 0 })
-  run(n)
+  syncFrom(addDays(today(), -(n - 1)))
     .then(() => {
       setMeta('last_sync_at', String(Date.now()))
       setMeta('data_version', String(Date.now()))
@@ -70,9 +74,12 @@ export function startSync(days: number) {
 const isFatal = (e: unknown) =>
   e instanceof GarminError && (e.kind === 'auth' || e.kind === 'no-key' || e.kind === 'rate-limit' || e.kind === 'network')
 
-async function run(days: number) {
+/**
+ * Fetch everything from `start` to today into the cache, skipping days that
+ * are already final. Used by the app's sync and by scripts/backfill.ts.
+ */
+export async function syncFrom(start: string) {
   const end = today()
-  const start = addDays(end, -(days - 1))
 
   // 1. Activities
   state.phase = 'activities'
@@ -100,6 +107,25 @@ async function run(days: number) {
       if (isFatal(e)) throw e
       state.failedDays += 1
     }
+  }
+
+  // Weight: one request covers any span, so always ask for everything we hold.
+  state.phase = 'weight'
+  try {
+    const known = getMeta('synced_from')
+    const from = known && known < start ? known : start
+    const res = await garminGet<{ dailyWeightSummaries?: Record<string, unknown>[] }>(
+      `/weight-service/weight/range/${from}/${end}`,
+      { includeAll: 'true' },
+    )
+    for (const w of res?.dailyWeightSummaries ?? []) {
+      // Keep the day's latest reading and its range; drop the per-reading list.
+      const { allWeightMetrics: _all, ...day } = w
+      if (typeof day.summaryDate === 'string') putRaw('weight', day.summaryDate, day)
+    }
+  } catch (e) {
+    if (isFatal(e)) throw e
+    state.failedDays += 1
   }
 
   // 3. Per-day summary and sleep, skipping days already final in the cache

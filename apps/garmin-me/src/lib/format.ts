@@ -1,5 +1,5 @@
 /** Display formatting shared by server and client components. Metric units. */
-export type Fmt = 'int' | 'km' | 'hours' | 'pace' | 'bpm' | 'ms' | 'score' | 'kcal' | 'm' | 'count'
+export type Fmt = 'int' | 'km' | 'hours' | 'pace' | 'bpm' | 'ms' | 'score' | 'kcal' | 'm' | 'count' | 'kg' | 'pct'
 
 const INT = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
 const ONE = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -37,6 +37,10 @@ export function formatValue(fmt: Fmt, v: number | null | undefined): string {
       return `${INT.format(v)} kcal`
     case 'm':
       return `${INT.format(v)} m`
+    case 'kg':
+      return `${ONE.format(v)} kg`
+    case 'pct':
+      return `${ONE.format(v)}%`
     default:
       return INT.format(v)
   }

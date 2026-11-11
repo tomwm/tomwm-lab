@@ -44,11 +44,12 @@ limits*).
 | Running | Distance, runs, pace, heart rate, distance per period, time in HR zones, pace and HR per run |
 | Recovery | HRV (with Garmin's baseline range), resting HR, sleep stages and score, Body Battery, stress |
 | Strength | Sessions, time, session length and heart rate. Garmin has no sets/reps/weights for these sessions |
-| Health | Steps, intensity minutes, stress, active calories, SpO2, and all other sports |
+| Health | Steps, intensity minutes, stress, active calories, SpO2, weight and body composition, and all other sports |
 
 Ranges: 7 days, 30 days, 12 weeks (weekly buckets), 12 months (monthly buckets,
-weekly averages for daily metrics). Every card is tagged **Garmin** (a value
-Garmin reports) or **Calc** (a total, average or comparison worked out here).
+weekly averages for daily metrics). Every card carries a small dot: grey for Garmin's own data (including simple
+totals and averages of it), amber for a figure this app estimates that Garmin
+doesn't report, such as average pace across runs or a projected finish date.
 Days with no recording are shown as gaps, never as zero. None of this is
 medical advice.
 
@@ -64,7 +65,7 @@ src/lib/garmin/db.ts               SQLite cache of Garmin's raw JSON, untouched
    ▼
 src/lib/garmin/normalize.ts        raw JSON → Activity / Day (the only file that knows Garmin's field names)
    ▼
-src/lib/metrics.ts                 periods, buckets, means, sums, comparisons ("Calc")
+src/lib/metrics.ts                 periods, buckets, means, sums, comparisons
    ▼
 src/app/*/page.tsx                 one page per section, built from
 src/components/                    Kpi, ChartCard, ActivityTable, ZoneBar, Shell
@@ -82,6 +83,7 @@ needed. Run `npm run garmin:probe` to see every field Garmin returns.
 | Activities | `/activitylist-service/activities/search/activities` |
 | HRV | `/hrv-service/hrv/daily/{from}/{to}` (28-day chunks) |
 | Sleep | `/sleep-service/sleep/dailySleep?date=` |
+| Weight and body composition | `/weight-service/weight/range/{from}/{to}?includeAll=true` (whole history in one call) |
 | Daily summary (steps, resting HR, stress, Body Battery) | `/usersummary-service/usersummary/daily?calendarDate=` |
 
 The auth flow and endpoint list were taken from
@@ -98,6 +100,10 @@ Garmin answers 429. A day is fetched once and then kept; only the last couple
 of days are re-fetched on refresh. Loading a full 12 months for the first time
 takes around ten minutes, newest first, and the page fills in as it goes.
 
+The app itself loads at most the last 400 days. `npm run garmin:backfill`
+loads everything older, once (about ten minutes per year of history); after
+that it is all local and never fetched again.
+
 The app syncs when you press refresh, when the cache is over an hour old, or
 when the selected range reaches further back than what's cached.
 
@@ -107,6 +113,7 @@ when the selected range reaches further back than what's cached.
 |---|---|
 | `npm run dev` | Start on <http://localhost:3015> |
 | `npm run garmin:key` | Save and test the API key |
+| `npm run garmin:backfill` | One-off: load history older than the last 400 days. No argument goes back to your first activity; pass a date (`-- 2019-01-01`) to choose, or `-- --dry` to see how long it will take. Resumable |
 | `npm run garmin:probe` | Print the shape of each Garmin response (`-- --save` keeps raw samples outside the repo) |
 | `npm run typecheck` | TypeScript check |
 

@@ -28,19 +28,19 @@ function Strength({ period, data }: Ctx) {
 
   return (
     <>
-      <Section title={`Last ${period.label}`}>
+      <Section title={period.title.charAt(0).toUpperCase() + period.title.slice(1)}>
         <Grid>
-          <Kpi label="Sessions" value={fmtInt(count.value ?? 0)} delta={count.delta} spark={count.spark} color={color} source="calc" />
-          <Kpi label="Total time" value={time.n ? fmtHours(time.value ?? 0) : null} delta={time.delta} spark={time.spark} color={color} source="calc" />
-          <Kpi label="Avg session" value={avg.value !== null ? fmtHours(avg.value) : null} delta={avg.delta} spark={avg.spark} color={color} source="calc" />
-          <Kpi label="Avg heart rate" value={hr.value !== null ? fmtInt(hr.value) : null} unit="bpm" sub={hr.value !== null ? 'Mean of each session’s average' : undefined} delta={hr.delta} color={C.heart} source="calc" />
+          <Kpi label="Sessions" value={fmtInt(count.value ?? 0)} delta={count.delta} spark={count.spark} color={color} source="garmin" />
+          <Kpi label="Total time" value={time.n ? fmtHours(time.value ?? 0) : null} delta={time.delta} spark={time.spark} color={color} source="garmin" />
+          <Kpi label="Avg session" value={avg.value !== null ? fmtHours(avg.value) : null} delta={avg.delta} spark={avg.spark} color={color} source="garmin" />
+          <Kpi label="Avg heart rate" value={hr.value !== null ? fmtInt(hr.value) : null} unit="bpm" sub={hr.value !== null ? 'Mean of each session’s average' : undefined} delta={hr.delta} color={C.heart} source="estimate" />
         </Grid>
       </Section>
 
       <Section title="Consistency">
         <Grid cols={2}>
-          <ChartCard title="Strength sessions" subtitle={`Sessions per ${period.bucketNoun}`} source="calc" kind="bar" fmt="count" data={bucketRows(period, data, { n: { filter: isStrength, value: () => 1 } })} series={[{ key: 'n', name: 'Sessions', color }]} />
-          <ChartCard title="Strength training time" subtitle={`Hours per ${period.bucketNoun}`} source="calc" kind="bar" fmt="hours" data={bucketRows(period, data, { h: { filter: isStrength, value: (a) => a.durationH } })} series={[{ key: 'h', name: 'Time', color }]} />
+          <ChartCard title="Strength sessions" subtitle={`Sessions per ${period.bucketNoun}`} source="garmin" kind="bar" fmt="count" data={bucketRows(period, data, { n: { filter: isStrength, value: () => 1 } })} series={[{ key: 'n', name: 'Sessions', color }]} />
+          <ChartCard title="Strength training time" subtitle={`Hours per ${period.bucketNoun}`} source="garmin" kind="bar" fmt="hours" data={bucketRows(period, data, { h: { filter: isStrength, value: (a) => a.durationH } })} series={[{ key: 'h', name: 'Time', color }]} />
         </Grid>
         <p className="mt-3 text-xs leading-relaxed text-muted">
           Garmin only has a duration, heart rate and training load for your strength sessions. Exercises, sets, reps and
@@ -49,7 +49,7 @@ function Strength({ period, data }: Ctx) {
       </Section>
 
       <Section title="Sessions" hint={`${sessions.length} in range`}>
-        <ActivityTable activities={sessions.slice(0, 30)} empty={`No strength sessions in the last ${period.label}`} />
+        <ActivityTable activities={sessions.slice(0, 30)} empty={`No strength sessions in ${period.range === 'all' ? 'your history' : period.title.startsWith('last') ? `the ${period.title}` : period.title}`} />
       </Section>
     </>
   )

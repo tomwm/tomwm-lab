@@ -6,10 +6,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { RANGES, type RangeKey } from '@/lib/metrics'
 import type { SyncStatus } from '@/lib/garmin/sync'
 
-export function RangeSwitch({ range }: { range: RangeKey }) {
+export function RangeSwitch({ range, years }: { range: RangeKey; years: number[] }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const longRange = range === 'all' || range.startsWith('y')
   return (
-    <div role="group" aria-label="Time range" className="inline-flex rounded-full border border-line bg-surface p-0.5">
+    <div role="group" aria-label="Time range" className="inline-flex items-center rounded-full border border-line bg-surface p-0.5">
       {RANGES.map((r) => (
         <Link
           key={r.key}
@@ -24,6 +26,30 @@ export function RangeSwitch({ range }: { range: RangeKey }) {
           {r.short}
         </Link>
       ))}
+      {/* Calendar years and all time, for looking further back than 12 months. */}
+      <select
+        aria-label="Pick a year or all time"
+        value={longRange ? range : ''}
+        onChange={(e) => e.target.value && router.push(`${pathname}?range=${e.target.value}`, { scroll: false })}
+        className={`cursor-pointer appearance-none rounded-full py-1.5 pl-3 pr-6 text-xs font-medium tabular-nums outline-offset-2 ${
+          longRange ? 'bg-ink text-page' : 'bg-transparent text-ink-2 hover:text-ink'
+        }`}
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%23898781' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 9px center',
+        }}
+      >
+        <option value="" disabled>
+          Year
+        </option>
+        <option value="all">All time</option>
+        {years.map((y) => (
+          <option key={y} value={`y${y}`}>
+            {y}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }

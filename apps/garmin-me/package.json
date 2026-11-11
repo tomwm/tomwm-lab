@@ -8,7 +8,8 @@
     "start": "next start --hostname 127.0.0.1 --port 3015",
     "typecheck": "tsc --noEmit",
     "garmin:key": "tsx scripts/set-key.ts",
-    "garmin:probe": "tsx scripts/probe.ts"
+    "garmin:probe": "tsx scripts/probe.ts",
+    "garmin:backfill": "tsx scripts/backfill.ts"
   },
   "dependencies": {
     "next": "15.3.9",

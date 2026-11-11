@@ -40,6 +40,12 @@ const WEEKDAY = f({ weekday: 'short' })
 const MONTH = f({ month: 'short' })
 const FULL = f({ weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 
+const DATE = f({ day: 'numeric', month: 'short', year: 'numeric' })
+const MONTH_YEAR = f({ month: 'long', year: 'numeric' })
+/** '6 Oct 2025' */
+export const fmtDate = (s: string) => DATE.format(parseISO(s))
+/** 'March 2031' */
+export const fmtMonthYear = (s: string) => MONTH_YEAR.format(parseISO(s))
 export const fmtDay = (s: string) => DAY.format(parseISO(s))
 export const fmtWeekday = (s: string) => WEEKDAY.format(parseISO(s))
 export const fmtMonth = (s: string) => MONTH.format(parseISO(s))

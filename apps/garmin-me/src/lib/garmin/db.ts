@@ -8,7 +8,7 @@ import { chmodSync, mkdirSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { DATA_DIR, DB_FILE } from './config'
 
-export type RawKind = 'activity' | 'summary' | 'sleep' | 'hrv'
+export type RawKind = 'activity' | 'summary' | 'sleep' | 'hrv' | 'weight'
 
 const g = globalThis as unknown as { __garminDb?: DatabaseSync }
 
