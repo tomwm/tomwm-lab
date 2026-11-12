@@ -14,6 +14,8 @@
     { "source": "/morgan-map",                   "destination": "https://morgan-map.vercel.app" },
     { "source": "/sexual-elf(.*)",               "destination": "https://sexual-elf.vercel.app/sexual-elf$1" },
     { "source": "/collective-unconcious(.*)",    "destination": "https://collective-unconcious.vercel.app/collective-unconcious$1" },
-    { "source": "/splitz(.*)",                   "destination": "https://splitz-tomwm.vercel.app/splitz$1" }
+    { "source": "/splitz(.*)",                   "destination": "https://splitz-tomwm.vercel.app/splitz$1" },
+    { "source": "/revisionlab(.*)",              "destination": "https://revisionlab-two.vercel.app/revisionlab$1" },
+    { "source": "/tara-cards(.*)",               "destination": "https://tara-cards.vercel.app/tara-cards$1" }
   ]
 }
