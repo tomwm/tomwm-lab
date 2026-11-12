@@ -5,9 +5,7 @@
   "rewrites": [
     { "source": "/policy-lines/:path*",         "destination": "/policy-lines/index.html" },
     { "source": "/uk-gov-network-graph/:path*", "destination": "/uk-gov-network-graph/index.html" },
-    { "source": "/bc-gov-network-graph/:path*",  "destination": "/bc-gov-network-graph/index.html" },
     { "source": "/smile",                       "destination": "/smile/index.html" },
-    { "source": "/lottery-sim/:path*",           "destination": "/lottery-sim/index.html" },
     { "source": "/history-timeline/:path*",      "destination": "/history-timeline/index.html" },
     { "source": "/morgan-map/api/:path*",        "destination": "https://morgan-map.vercel.app/api/:path*" },
     { "source": "/morgan-map/:path*",            "destination": "https://morgan-map.vercel.app/:path*" },

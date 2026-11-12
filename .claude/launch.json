@@ -2,53 +2,32 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "bc-gov-network-graph",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:bc-gov-network-graph"],
-      "port": 8080,
-      "autoPort": true
-    },
-    {
       "name": "morgan-map",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:morgan-map"],
       "port": 5174
     },
     {
-      "name": "lottery-sim",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:lottery-sim"],
-      "port": 8082
-    },
-    {
-      "name": "samtrees",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "8085", "apps/samtrees"],
-      "port": 8085
-    },
-    {
       "name": "constellation-sampler",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "apps/constellation-sampler"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "apps/constellation-sampler"
+      ],
       "port": 5180
-    },
-    {
-      "name": "only-moos",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:only-moos"],
-      "port": 3003
     },
     {
       "name": "history-timeline",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "apps/history-timeline"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "apps/history-timeline"
+      ],
       "port": 8085
-    },
-    {
-      "name": "tomscomms",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "apps/tomscomms"],
-      "port": 3001
     },
     {
       "name": "splitz",

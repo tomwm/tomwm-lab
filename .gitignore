@@ -7,3 +7,6 @@ apps/*/.claude/
 .vercel
 .env.local
 .env*.local
+
+# Local-only archive of retired apps (kept on this Mac, not in Git)
+/Archive/
