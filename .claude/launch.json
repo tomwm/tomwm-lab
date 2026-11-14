@@ -24,6 +24,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:garmin-me"],
       "port": 3015
+    },
+    {
+      "name": "revisionlab",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:revisionlab"],
+      "port": 3012
+    },
+    {
+      "name": "tara-cards",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:tara-cards"],
+      "port": 5181
     }
   ]
 }

@@ -5,7 +5,9 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "!apps/garmin-me"
+    "!apps/garmin-me",
+    "!apps/revisionlab",
+    "!apps/tara-cards"
   ],
   "scripts": {
     "build": "node build.js",
@@ -15,7 +17,10 @@
     "dev:sexual-elf": "npm -w apps/sexual-elf run dev",
     "dev:history-timeline": "npm -w apps/history-timeline run dev",
     "dev:splitz": "npm -w apps/splitz run dev",
-    "dev:garmin-me": "npm --prefix apps/garmin-me run dev"
+    "dev:garmin-me": "npm --prefix apps/garmin-me run dev",
+    "dev:revisionlab": "npm --prefix apps/revisionlab run dev",
+    "dev:tara-cards": "npm --prefix apps/tara-cards run dev",
+    "test:tara-cards": "npm --prefix apps/tara-cards run test"
   },
   "overrides": {
     "react": "19.1.0",

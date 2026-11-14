@@ -1,0 +1,10 @@
+# Never upload the local database — it holds essays and notes, and production
+# reads from Turso anyway.
+data/
+
+# Local secrets and build output.
+.env*
+!.env.example
+.next/
+node_modules/
+*.tsbuildinfo

@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/* TARA Cards — a calm, paper-like revision workspace.
+   Every colour, type, spacing, radius and shadow value is a token so the
+   palette can later be matched to the owner's other revision apps. */
+
+:root {
+  color-scheme: light;
+
+  /* surfaces and text */
+  --background: #faf8f4;
+  --surface: #ffffff;
+  --surface-muted: #f2efe8;
+  --surface-sunken: #ebe7de;
+  --foreground: #221f1c;
+  --foreground-muted: #5f594f;
+  --foreground-subtle: #7d766a;
+  --border: #e3ded2;
+  --border-strong: #cdc6b6;
+
+  /* primary action */
+  --primary: #4a3f6b;
+  --primary-hover: #3b3256;
+  --primary-foreground: #fbf9f5;
+  --ring: #4a3f6b;
+
+  /* one restrained accent per component */
+  --ct: #3c5a72;
+  --ct-bg: #eaf0f5;
+  --ct-border: #c6d6e2;
+  --ps: #2f6b57;
+  --ps-bg: #e9f2ee;
+  --ps-border: #c2ddd1;
+  --wr: #8a5a1f;
+  --wr-bg: #f9f0e2;
+  --wr-border: #e7d3b2;
+
+  /* status */
+  --success: #2f6f4f;
+  --success-bg: #eaf3ec;
+  --warning: #96591a;
+  --warning-bg: #fbf1e0;
+  --danger: #9d3838;
+  --danger-bg: #f8ecec;
+  --info: #3c5a72;
+  --info-bg: #eaf0f4;
+
+  /* radii, shadow, spacing rhythm */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 2px rgba(34, 31, 28, 0.05), 0 1px 3px rgba(34, 31, 28, 0.04);
+  --shadow-raised: 0 2px 4px rgba(34, 31, 28, 0.06), 0 6px 16px rgba(34, 31, 28, 0.07);
+  --reading-measure: 68ch;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #18161a;
+  --surface: #211f24;
+  --surface-muted: #2a272e;
+  --surface-sunken: #1d1b20;
+  --foreground: #f0ece5;
+  --foreground-muted: #b3ab9f;
+  --foreground-subtle: #8f887d;
+  --border: #38343d;
+  --border-strong: #4c4754;
+
+  --primary: #b3a6de;
+  --primary-hover: #c5bbe8;
+  --primary-foreground: #1c1826;
+  --ring: #b3a6de;
+
+  --ct: #9dc0dc;
+  --ct-bg: #1e2a34;
+  --ct-border: #334655;
+  --ps: #8ecfb4;
+  --ps-bg: #1b2a25;
+  --ps-border: #2f4a40;
+  --wr: #e0b378;
+  --wr-bg: #2e2418;
+  --wr-border: #4d3d26;
+
+  --success: #7fc49c;
+  --success-bg: #1b2a22;
+  --warning: #dfae70;
+  --warning-bg: #2d2418;
+  --danger: #e09a9a;
+  --danger-bg: #2e1e1e;
+  --info: #9dc0dc;
+  --info-bg: #1e2a34;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-ct: var(--ct);
+  --color-ct-bg: var(--ct-bg);
+  --color-ct-border: var(--ct-border);
+  --color-ps: var(--ps);
+  --color-ps-bg: var(--ps-bg);
+  --color-ps-border: var(--ps-border);
+  --color-wr: var(--wr);
+  --color-wr-bg: var(--wr-bg);
+  --color-wr-border: var(--wr-border);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Question and passage text reads as a document, not as UI chrome. */
+.prose-reading {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  max-width: var(--reading-measure);
+}
+
+.prose-reading p + p {
+  margin-top: 0.85em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Skip link: visible only when focused. */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 100;
+  background: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  transition: top 120ms ease;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Tables inside questions are real tables and scroll in their own container. */
+.q-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.q-table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.q-table th,
+.q-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+}
+.q-table thead th {
+  background: var(--surface-muted);
+  font-weight: 600;
+}
+.q-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}

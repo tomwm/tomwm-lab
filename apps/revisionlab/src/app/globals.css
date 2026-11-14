@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* RevisionLab — calm, paper-like workspace for close reading and writing */
+:root {
+  color-scheme: light;
+
+  --background: #faf8f4;
+  --surface: #ffffff;
+  --surface-muted: #f2efe8;
+  --foreground: #221f1c;
+  --foreground-muted: #6b6459;
+  --border: #e5e0d5;
+
+  --primary: #6b4226;
+  --primary-foreground: #fdf9f2;
+  --accent: #8a5a3b;
+
+  --ring: #6b4226;
+
+  --success: #2f6f4f;
+  --success-bg: #eaf3ec;
+  --warning: #a6631a;
+  --warning-bg: #fbf0df;
+  --danger: #a33d3d;
+  --danger-bg: #f8ecec;
+  --info: #3c5a72;
+  --info-bg: #eaf0f4;
+
+  /* per-text accent colours, used sparingly for identity, not decoration */
+  --text-dracula: #7a2323;
+  --text-lear: #4a3b6b;
+  --text-beloved: #8a5a1f;
+  --text-jerusalem: #2f6b3f;
+  /* generic slots, cycled through for texts added later */
+  --text-accent-1: #2f6b6b;
+  --text-accent-2: #6b2f5a;
+  --text-accent-3: #8a4a2f;
+  --text-accent-4: #3b4a7a;
+}
+
+html {
+  color-scheme: light only;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "salt";
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --font-serif: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.prose-reading {
+  font-family: var(--font-serif);
+  line-height: 1.7;
+}
+
+::selection {
+  background: #e5d5c0;
+}

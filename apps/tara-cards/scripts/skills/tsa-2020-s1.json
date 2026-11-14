@@ -1,0 +1,19 @@
+{
+  "1": "ct-flaws", "2": "ps-finding-method", "3": "ct-assumptions", "4": "ct-main-conclusion",
+  "5": "ct-argument-patterns", "6": "ps-finding-method", "7": "ps-relevant-selection",
+  "8": "ps-relevant-selection", "9": "ct-inference", "10": "ct-strengthen-weaken",
+  "11": "ct-argument-patterns", "12": "ps-finding-method", "13": "ps-relevant-selection",
+  "14": "ps-finding-method", "15": "ct-strengthen-weaken", "16": "ct-main-conclusion",
+  "17": "ct-apply-principle", "18": "ps-finding-method", "19": "ps-relevant-selection",
+  "20": "ps-finding-method", "21": "ct-argument-patterns", "22": "ct-flaws",
+  "23": "ct-strengthen-weaken", "24": "ps-relevant-selection", "25": "ps-relevant-selection",
+  "26": "ps-equivalence", "27": "ct-main-conclusion", "28": "ct-apply-principle",
+  "29": "ct-assumptions", "30": "ps-finding-method", "31": "ps-finding-method",
+  "32": "ps-finding-method", "33": "ct-main-conclusion", "34": "ct-flaws",
+  "35": "ct-argument-patterns", "36": "ps-finding-method", "37": "ps-relevant-selection",
+  "38": "ps-equivalence", "39": "ct-apply-principle", "40": "ct-flaws",
+  "41": "ct-main-conclusion", "42": "ps-finding-method", "43": "ps-relevant-selection",
+  "44": "ps-relevant-selection", "45": "ct-inference", "46": "ps-finding-method",
+  "47": "ct-assumptions", "48": "ps-relevant-selection", "49": "ct-apply-principle",
+  "50": "ps-equivalence"
+}
