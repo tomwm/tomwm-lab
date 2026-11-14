@@ -41,6 +41,25 @@ export function sportOf(typeKey: string): Sport {
   return 'other'
 }
 
+/** One exercise in a strength session, as Garmin summarises it. */
+export type Exercise = {
+  /** Garmin's exercise category, e.g. BENCH_PRESS; UNKNOWN when the watch couldn't tell. */
+  category: string
+  /** Garmin's sub-category, e.g. SEATED_CABLE_ROW, when recorded. */
+  sub: string | null
+  sets: number
+  reps: number
+}
+
+function normalizeExercise(e: Raw): Exercise {
+  return {
+    category: typeof e?.category === 'string' && e.category ? e.category : 'UNKNOWN',
+    sub: typeof e?.subCategory === 'string' && e.subCategory ? e.subCategory : null,
+    sets: num(e?.sets) ?? 0,
+    reps: num(e?.reps) ?? 0,
+  }
+}
+
 export type Activity = {
   id: number
   date: string // local calendar date
@@ -64,6 +83,8 @@ export type Activity = {
   /** Seconds in HR zones 1-5, as recorded by Garmin. */
   zonesSec: number[] | null
   location: string | null
+  /** Exercises the watch recognised (strength sessions); empty when none were recorded. */
+  exercises: Exercise[]
 }
 
 export function normalizeActivity(a: Raw): Activity | null {
@@ -96,6 +117,7 @@ export function normalizeActivity(a: Raw): Activity | null {
     aerobicTE: num(a.aerobicTrainingEffect),
     zonesSec: zones.some((z) => z !== null) ? zones.map((z) => z ?? 0) : null,
     location: typeof a.locationName === 'string' ? a.locationName : null,
+    exercises: Array.isArray(a.summarizedExerciseSets) ? a.summarizedExerciseSets.map(normalizeExercise) : [],
   }
 }
 
