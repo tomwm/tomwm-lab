@@ -1,0 +1,12 @@
+{
+  "primary_teal": "#3F8D8A",
+  "deep_ink": "#224B52",
+  "sage": "#A9C8C1",
+  "mist": "#EAF3F1",
+  "stone": "#F7F7F4",
+  "accent_aqua": "#68B8B0",
+  "alert_amber": "#C98A2E",
+  "risk_low": "#6AAE9A",
+  "risk_medium": "#C9A84D",
+  "risk_high": "#C46A5C"
+}

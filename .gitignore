@@ -10,3 +10,9 @@ apps/*/.claude/
 
 # Local-only archive of retired apps (kept on this Mac, not in Git)
 /Archive/
+
+# Build output and local Claude Code state
+.next/
+apps/*/.next/
+.claude/worktrees/
+.claude/projects/

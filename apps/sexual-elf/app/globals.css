@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — Sexual Elf redesign */
+  --color-teal-50:  #f0f8f7;
+  --color-teal-100: #d4eeeb;
+  --color-teal-200: #a9ded7;
+  --color-teal-300: #7ecbc2;
+  --color-teal-400: #68B8B0;
+  --color-teal-500: #3F8D8A;
+  --color-teal-600: #2f6d6a;
+  --color-teal-700: #204e4c;
+  --color-teal-800: #132f2e;
+  --color-teal-900: #091717;
+
+  --color-ink-50:   #edf3f4;
+  --color-ink-100:  #ccdde0;
+  --color-ink-200:  #99bac0;
+  --color-ink-300:  #669699;
+  --color-ink-400:  #407477;
+  --color-ink-500:  #2d555a;
+  --color-ink-700:  #1a3b40;
+  --color-ink-900:  #224B52;
+
+  --color-sage-100: #d8ede9;
+  --color-sage-200: #c0e0da;
+  --color-sage-300: #A9C8C1;
+  --color-sage-400: #A9C8C1;
+
+  --color-mist-50:  #f5faf9;
+  --color-mist-100: #EAF3F1;
+  --color-mist-200: #d4e8e4;
+
+  --color-stone-50: #F7F7F4;
+  --color-stone-100: #efefeb;
+  --color-stone-200: #e0e0da;
+
+  --color-amber-400: #d4a042;
+  --color-amber-500: #C98A2E;
+  --color-amber-600: #a86e22;
+
+  /* Risk levels */
+  --color-risk-low:     #6AAE9A;
+  --color-risk-medium:  #C9A84D;
+  --color-risk-high:    #C46A5C;
+  --color-risk-unknown: #9ca3af;
+
+  /* Legacy forest/cream/gold — kept for wizard/results/chat backward compat */
+  --color-forest-50:  #f0f7f0;
+  --color-forest-100: #d6ecd7;
+  --color-forest-200: #aed9b0;
+  --color-forest-300: #7dc080;
+  --color-forest-400: #55a858;
+  --color-forest-500: #3F8D8A;
+  --color-forest-600: #2f6d6a;
+  --color-forest-700: #204e4c;
+  --color-forest-800: #132f2e;
+  --color-forest-900: #091717;
+
+  --color-cream-50:   #f5faf9;
+  --color-cream-100:  #EAF3F1;
+  --color-cream-200:  #d4e8e4;
+
+  --color-gold-100:   #f5e9d0;
+  --color-gold-200:   #ead5a0;
+  --color-gold-300:   #d4b46a;
+  --color-gold-400:   #C9A84D;
+  --color-gold-500:   #C98A2E;
+  --color-gold-600:   #a86e22;
+
+  /* Typography */
+  --font-heading: "Manrope", system-ui, sans-serif;
+  --font-sans:    "Inter", system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, monospace;
+  --font-serif:   "Manrope", system-ui, sans-serif;
+
+  /* Animation */
+  --animate-elf-bob:  elf-bob 4s ease-in-out infinite;
+  --animate-elf-glow: elf-glow 3s ease-in-out infinite;
+  --animate-fade-up:  fade-up 0.5s ease-out both;
+}
+
+@keyframes elf-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes elf-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(63, 141, 138, 0.25)); }
+  50%       { filter: drop-shadow(0 0 16px rgba(63, 141, 138, 0.5)); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+:root {
+  --background: #F7F7F4;
+  --foreground: #224B52;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-serif {
+  font-family: var(--font-heading);
+}

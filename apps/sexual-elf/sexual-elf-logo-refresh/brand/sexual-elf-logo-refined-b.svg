@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+
+
+<g transform="translate(600,330)">
+<g transform="scale(1.55)" fill="none" stroke="#3E8A86" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 0 170 C -36 120, -88 84, -140 34 C -162 12, -176 -11, -186 -44 C -142 -44, -82 -26, -26 20 C 10 50, 30 82, 30 120" />
+  <path d="M 0 170 C 36 120, 88 84, 140 34 C 162 12, 176 -11, 186 -44 C 142 -44, 82 -26, 26 20 C -10 50, -30 82, -30 120" />
+  <path d="M -48 228 C -54 192, -48 162, -32 138 C -18 118, -7 106, 0 92" />
+  <path d="M 48 228 C 54 192, 48 162, 32 138 C 18 118, 7 106, 0 92" />
+  <path d="M -48 228 C -24 260, 24 260, 48 228" />
+  <path d="M 0 -94 L 13 -65 L 42 -52 L 13 -38 L 0 -10 L -13 -38 L -42 -52 L -13 -65 Z" fill="#3E8A86" stroke="none"/>
+</g>
+</g>
+<text x="600" y="760" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="110" font-weight="600" letter-spacing="-2" fill="#224B52">Sexual Elf</text>
+
+</svg>

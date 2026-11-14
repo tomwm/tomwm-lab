@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="240" viewBox="0 0 1200 240">
+<rect width="100%" height="100%" fill="#F7F7F4"/>
+<g stroke="#3F8D8A" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(90,70)">
+    <path d="M40 110 C10 90,0 66,0 40 V10 H80 V40 C80 66,70 90,40 110 Z"/>
+    <path d="M22 54 L36 68 L58 40"/>
+  </g>
+  <g transform="translate(330,66)">
+    <rect x="12" y="40" width="56" height="52" rx="10"/>
+    <path d="M24 40 V24 C24 4,56 4,56 24 V40"/>
+  </g>
+  <g transform="translate(560,62)">
+    <path d="M72 8 C44 10,18 30,12 58 C8 82,24 102,44 118 C58 128,78 126,92 114"/>
+    <path d="M92 114 C108 100,118 80,116 58 C114 38,104 22,86 10"/>
+  </g>
+  <g transform="translate(820,56)">
+    <path d="M40 0 L52 28 L80 40 L52 52 L40 80 L28 52 L0 40 L28 28 Z"/>
+  </g>
+  <g transform="translate(1010,62)">
+    <circle cx="40" cy="40" r="32"/>
+    <path d="M40 20 V60"/>
+    <path d="M20 40 H60"/>
+  </g>
+</g>
+<g fill="#224B52" font-family="Inter, Arial, sans-serif" font-size="26">
+  <text x="48" y="205">Evidence-based</text>
+  <text x="316" y="205">Private</text>
+  <text x="543" y="205">Non-judgmental</text>
+  <text x="785" y="205">Empowering</text>
+  <text x="1006" y="205">Testing</text>
+</g>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420">
+<rect width="100%" height="100%" fill="#F7F7F4"/>
+<g font-family="Inter, Arial, sans-serif" fill="#224B52">
+  <rect x="40" y="40" width="340" height="280" rx="24" fill="#FFFFFF" stroke="#D8E6E2"/>
+  <text x="70" y="95" font-size="22">Low risk</text>
+  <rect x="70" y="115" width="100" height="12" rx="6" fill="#6AAE9A"/>
+  <text x="70" y="165" font-size="18">Current guidance suggests lower likelihood</text>
+  <text x="70" y="195" font-size="18">based on the answers provided.</text>
+  <text x="70" y="245" font-size="18">Suggested next step:</text>
+  <text x="70" y="275" font-size="18">Monitor symptoms and test if unsure.</text>
+
+  <rect x="430" y="40" width="340" height="280" rx="24" fill="#FFFFFF" stroke="#D8E6E2"/>
+  <text x="460" y="95" font-size="22">Medium risk</text>
+  <rect x="460" y="115" width="100" height="12" rx="6" fill="#C9A84D"/>
+  <text x="460" y="165" font-size="18">There may be meaningful risk depending</text>
+  <text x="460" y="195" font-size="18">on timing, exposure, and symptoms.</text>
+  <text x="460" y="245" font-size="18">Suggested next step:</text>
+  <text x="460" y="275" font-size="18">Consider testing and reduce uncertainty.</text>
+
+  <rect x="820" y="40" width="340" height="280" rx="24" fill="#FFFFFF" stroke="#D8E6E2"/>
+  <text x="850" y="95" font-size="22">Higher risk</text>
+  <rect x="850" y="115" width="100" height="12" rx="6" fill="#C46A5C"/>
+  <text x="850" y="165" font-size="18">Your answers suggest stronger reasons</text>
+  <text x="850" y="195" font-size="18">to test or seek clinical advice.</text>
+  <text x="850" y="245" font-size="18">Suggested next step:</text>
+  <text x="850" y="275" font-size="18">Seek testing or professional support.</text>
+</g>
+</svg>
