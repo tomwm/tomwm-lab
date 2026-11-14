@@ -2,31 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "morgan-map",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:morgan-map"],
-      "port": 5174
-    },
-    {
       "name": "constellation-sampler",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--prefix",
-        "apps/constellation-sampler"
-      ],
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/constellation-sampler"],
       "port": 5180
     },
     {
       "name": "history-timeline",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--prefix",
-        "apps/history-timeline"
-      ],
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/history-timeline"],
       "port": 8085
     },
     {
