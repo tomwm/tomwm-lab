@@ -1,13 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { MUSCLE_LABEL, MUSCLES, type Muscle } from '@/lib/muscles'
+import { BEST, type Suggestion } from '@/lib/exerciseLibrary'
+import { MUSCLE_LABEL, MUSCLES, type DoneRow, type Muscle } from '@/lib/muscles'
 import { SourceTag } from './Kpi'
 
 /**
  * Front and back body outlines with each muscle group shaded by weighted
  * sets, beside a ranked list with the exact numbers. Hovering either side
- * highlights the same muscle in both.
+ * highlights the same muscle in both; clicking a muscle opens a panel with
+ * the exercises you did for it and the ones that work it best.
  */
 
 const fmtSets = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1))
@@ -62,8 +64,24 @@ function Silhouette() {
   )
 }
 
-export function BodyMap({ sets, placed, unplaced, rangeTitle }: { sets: Record<Muscle, number>; placed: number; unplaced: number; rangeTitle: string }) {
+export function BodyMap({
+  sets,
+  placed,
+  unplaced,
+  rangeTitle,
+  done,
+}: {
+  sets: Record<Muscle, number>
+  placed: number
+  unplaced: number
+  rangeTitle: string
+  /** Exercises you did for each muscle in this range. */
+  done: Record<Muscle, DoneRow[]>
+}) {
   const [hover, setHover] = useState<Muscle | null>(null)
+  const [picked, setPicked] = useState<Muscle | null>(null)
+  const pick = (m: Muscle) => setPicked((p) => (p === m ? null : m))
+  const lit = (m: Muscle) => hover === m || picked === m
   const max = Math.max(...MUSCLES.map((m) => sets[m]))
   const step = (v: number) => (v <= 0 || max <= 0 ? 0 : Math.min(5, Math.max(1, Math.ceil((v / max) * 5))))
   const fill = (m: Muscle) => (step(sets[m]) ? `var(--z${step(sets[m])})` : 'var(--axis)')
@@ -73,13 +91,14 @@ export function BodyMap({ sets, placed, unplaced, rangeTitle }: { sets: Record<M
     const m = shape.muscle
     const props = {
       fill: fill(m),
-      stroke: hover === m ? 'var(--ink)' : 'var(--surface)',
-      strokeWidth: hover === m ? 2.5 : 1.5,
+      stroke: lit(m) ? 'var(--ink)' : 'var(--surface)',
+      strokeWidth: picked === m ? 3 : hover === m ? 2.5 : 1.5,
       onMouseEnter: () => setHover(m),
       onMouseLeave: () => setHover(null),
-      style: { cursor: 'default', transition: 'stroke 120ms' },
+      onClick: () => pick(m),
+      style: { cursor: 'pointer', transition: 'stroke 120ms' },
     }
-    const title = <title>{`${MUSCLE_LABEL[m]}: ${sets[m] ? `${fmtSets(sets[m])} sets` : 'not worked'}`}</title>
+    const title = <title>{`${MUSCLE_LABEL[m]}: ${sets[m] ? `${fmtSets(sets[m])} sets` : 'not worked'}. Click for exercises.`}</title>
     if (shape.ellipse) {
       const [cx, cy, rx, ry] = shape.ellipse
       return <ellipse key={key} cx={cx} cy={cy} rx={rx} ry={ry} {...props}>{title}</ellipse>
@@ -106,7 +125,9 @@ export function BodyMap({ sets, placed, unplaced, rangeTitle }: { sets: Record<M
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-medium text-ink">Muscles worked</h3>
-          <p className="mt-0.5 text-xs text-muted">Sets per muscle group, {rangeTitle}. Main muscles count in full, helper muscles count half.</p>
+          <p className="mt-0.5 text-xs text-muted">
+            Sets per muscle group, {rangeTitle}. Main muscles count in full, helper muscles count half. Click a muscle for exercises.
+          </p>
         </div>
         <SourceTag source="estimate" />
       </div>
@@ -144,7 +165,11 @@ export function BodyMap({ sets, placed, unplaced, rangeTitle }: { sets: Record<M
                 onMouseLeave={() => setHover(null)}
                 onFocus={() => setHover(m)}
                 onBlur={() => setHover(null)}
-                className={`grid grid-cols-[8.5rem_1fr_3.5rem] items-center gap-3 rounded-lg px-2 py-1.5 outline-none ${hover === m ? 'bg-wash' : ''}`}
+                onClick={() => pick(m)}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), pick(m))}
+                role="button"
+                aria-pressed={picked === m}
+                className={`grid cursor-pointer grid-cols-[8.5rem_1fr_3.5rem] items-center gap-3 rounded-lg px-2 py-1.5 outline-none ${lit(m) ? 'bg-wash' : ''} ${picked === m ? 'ring-1 ring-inset ring-[var(--axis)]' : ''}`}
               >
                 <span className={sets[m] ? 'text-ink' : 'text-muted'}>{MUSCLE_LABEL[m]}</span>
                 <span className="h-2 overflow-hidden rounded-full bg-wash">
@@ -157,11 +182,94 @@ export function BodyMap({ sets, placed, unplaced, rangeTitle }: { sets: Record<M
         </div>
       )}
 
+      {picked && <MusclePanel muscle={picked} sets={sets[picked]} done={done[picked]} rangeTitle={rangeTitle} onClose={() => setPicked(null)} />}
+
       <p className="mt-4 text-xs leading-relaxed text-muted">
         Based on {fmtSets(placed)} sets the watch identified.
         {unplaced > 0 && ` Another ${fmtSets(unplaced)} sets couldn't be identified and aren't shown.`} Which muscles an exercise
         works is this app&apos;s own mapping, not Garmin data.
       </p>
     </div>
+  )
+}
+
+/** A YouTube search for a demonstration of the exercise. */
+const youtubeSearch = (name: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(`how to ${name}`)}`
+
+function SuggestionList({ title, items }: { title: string; items: Suggestion[] }) {
+  return (
+    <div>
+      <h5 className="mb-1.5 text-xs font-medium text-ink-2">{title}</h5>
+      <ol className="space-y-1.5 text-sm">
+        {items.map((x, i) => (
+          <li key={x.name} className="flex gap-2">
+            <span className="w-4 shrink-0 text-right text-xs leading-5 tabular-nums text-muted">{i + 1}</span>
+            <span className="leading-5">
+              <a
+                href={youtubeSearch(x.name)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Search YouTube for how to do ${x.name.toLowerCase()} (opens in a new tab)`}
+                className="underline decoration-[var(--axis)] underline-offset-2 hover:text-ink hover:decoration-current"
+              >
+                {x.name}
+                <svg width="9" height="9" viewBox="0 0 12 12" aria-hidden className="ml-1 inline-block align-baseline opacity-60">
+                  <path d="M5 2H2v8h8V7M7 2h3v3M10 2 5.5 6.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="sr-only"> (YouTube search, opens in a new tab)</span>
+              </a>
+              {x.note && <span className="text-muted"> · {x.note}</span>}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+/** Opened by clicking a muscle: what you did for it, and what works it best. */
+function MusclePanel({ muscle, sets, done, rangeTitle, onClose }: { muscle: Muscle; sets: number; done: DoneRow[]; rangeTitle: string; onClose: () => void }) {
+  const lib = BEST[muscle]
+  return (
+    <section aria-label={`${MUSCLE_LABEL[muscle]} exercises`} className="mt-5 rounded-xl border border-line bg-raised p-4 md:p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-base font-semibold tracking-tight">{MUSCLE_LABEL[muscle]}</h4>
+          <p className="mt-0.5 text-xs text-muted">{sets ? `${fmtSets(sets)} sets ${rangeTitle}` : `Not worked ${rangeTitle}`}</p>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close" className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-2 hover:bg-wash hover:text-ink">
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <div>
+          <h5 className="mb-1.5 flex items-center gap-2 text-xs font-medium text-ink-2">
+            What you did
+            <SourceTag source="garmin" />
+          </h5>
+          {done.length === 0 ? (
+            <p className="text-sm text-muted">Nothing that works this muscle</p>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {done.slice(0, 8).map((d) => (
+                <li key={d.name} className="flex items-baseline justify-between gap-3">
+                  <span className="leading-5">
+                    {d.name}
+                    {d.role === 'helper' && <span className="text-muted"> · helper</span>}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-ink-2">{fmtSets(d.sets)} sets</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <SuggestionList title="Best with free weights & bodyweight" items={lib.free} />
+        <SuggestionList title="Best with machines & cables" items={lib.machine} />
+      </div>
+      <p className="mt-4 text-xs text-muted">Suggestions are general gym guidance, best first, not personalised advice. Each name links to a YouTube search for demonstrations.</p>
+    </section>
   )
 }

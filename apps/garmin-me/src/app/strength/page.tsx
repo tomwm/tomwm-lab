@@ -7,7 +7,7 @@ import { C, SPORT_COLOR } from '@/lib/colors'
 import { fmtHours, fmtInt } from '@/lib/format'
 import type { Activity } from '@/lib/garmin/normalize'
 import { actStat, actsIn, bucketRows } from '@/lib/metrics'
-import { muscleWork, topExercises } from '@/lib/muscles'
+import { exercisesByMuscle, muscleWork, topExercises } from '@/lib/muscles'
 
 export const dynamic = 'force-dynamic'
 const isStrength = (a: Activity) => a.sport === 'strength'
@@ -49,7 +49,7 @@ function Strength({ period, data }: Ctx) {
       </Section>
 
       <Section title="Muscles worked">
-        <BodyMap sets={work.sets} placed={work.placed} unplaced={work.unplaced} rangeTitle={period.title} />
+        <BodyMap sets={work.sets} placed={work.placed} unplaced={work.unplaced} rangeTitle={period.title} done={exercisesByMuscle(sessions)} />
         <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
           <div className="flex items-start justify-between gap-3 px-4 pb-1 pt-4 md:px-5">
             <div>

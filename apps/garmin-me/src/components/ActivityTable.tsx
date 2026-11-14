@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { SPORT_COLOR } from '@/lib/colors'
 import { fmtDay, fmtWeekday } from '@/lib/dates'
 import { fmtHours, fmtInt, fmtOne, fmtPace } from '@/lib/format'
 import { SPORT_LABEL, type Activity } from '@/lib/garmin/normalize'
+import { dayHref } from '@/lib/metrics'
 
 /** Compact list of sessions. Pace is only shown for sports where it means something. */
 export function ActivityTable({ activities, empty = 'No activities in this range' }: { activities: Activity[]; empty?: string }) {
@@ -30,7 +32,9 @@ export function ActivityTable({ activities, empty = 'No activities in this range
           {activities.map((a) => (
             <tr key={a.id} className="border-t border-line">
               <td className="whitespace-nowrap px-4 py-3 text-ink-2">
-                <span className="text-muted">{fmtWeekday(a.date)}</span> {fmtDay(a.date)}
+                <Link href={dayHref(a.date)} className="hover:text-ink hover:underline" title="See everything from this day">
+                  <span className="text-muted">{fmtWeekday(a.date)}</span> {fmtDay(a.date)}
+                </Link>
               </td>
               <td className="px-3 py-3">
                 <span className="flex items-center gap-2">

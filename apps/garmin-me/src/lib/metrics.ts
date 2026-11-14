@@ -6,13 +6,17 @@
  * projections) are marked as estimates in the UI.
  */
 import {
-  addDays, addMonths, diffDays, eachDay, fmtDay, fmtFull, fmtMonth, fmtWeekday, mondayOf, monthStart, today,
+  addDays, addMonths, diffDays, eachDay, fmtDay, fmtFull, fmtMonth, fmtMonthLong, fmtWeekday, mondayOf, monthStart, today,
 } from './dates'
 import type { Dataset } from './data'
 import { emptyDay, type Activity, type Day } from './garmin/normalize'
 
-/** Rolling ranges, a calendar year ('y2024'), or everything loaded ('all'). */
-export type RangeKey = '7d' | '30d' | '12w' | '12m' | 'all' | `y${number}`
+/**
+ * Rolling ranges, a calendar year ('y2024'), a calendar month ('m2025-11'),
+ * a Monday-to-Sunday week ('w2025-11-03'), everything loaded ('all'), or a
+ * single day ('d2025-11-04', used by the Days page).
+ */
+export type RangeKey = '7d' | '30d' | '12w' | '12m' | 'all' | `y${number}` | `m${string}` | `w${string}` | `d${string}`
 export const RANGES: { key: RangeKey; label: string; short: string; adj: string }[] = [
   { key: '7d', label: '7 days', short: '7D', adj: '7-day' },
   { key: '30d', label: '30 days', short: '30D', adj: '30-day' },
@@ -22,12 +26,22 @@ export const RANGES: { key: RangeKey; label: string; short: string; adj: string 
 export function parseRange(v: unknown): RangeKey {
   if (typeof v !== 'string') return '30d'
   if (v === 'all' || RANGES.some((r) => r.key === v)) return v as RangeKey
+  const now = today()
   const y = /^y(\d{4})$/.exec(v)
-  if (y && +y[1] >= 2000 && +y[1] <= +today().slice(0, 4)) return v as RangeKey
+  if (y && +y[1] >= 2000 && +y[1] <= +now.slice(0, 4)) return v as RangeKey
+  const m = /^m(\d{4}-\d{2})$/.exec(v)
+  if (m && +m[1].slice(5) >= 1 && +m[1].slice(5) <= 12 && `${m[1]}-01` <= now) return `m${m[1]}`
+  const w = /^w(\d{4}-\d{2}-\d{2})$/.exec(v)
+  if (w && !Number.isNaN(Date.parse(w[1])) && w[1] <= now) return `w${mondayOf(w[1])}`
   return '30d'
 }
 
-export type Bucket = { label: string; full: string; start: string; end: string }
+/** Where a click on a bucket goes: a day opens the Days page; a week, month or year narrows the current page. */
+export const dayHref = (d: string) => `/day?date=${d}`
+export const weekHref = (monday: string) => `?range=w${monday}`
+export const monthHref = (first: string) => `?range=m${first.slice(0, 7)}`
+
+export type Bucket = { label: string; full: string; start: string; end: string; go: string }
 export type Period = {
   range: RangeKey
   /** 'last 30 days', '2024', 'all time': reads naturally after "in" or as a heading. */
@@ -51,6 +65,8 @@ export type Period = {
   avgLabel: string
   /** 'Weekly' / 'Monthly' / 'Daily'. */
   avgWord: string
+  /** For a single week or month: the ranges either side, for stepping. */
+  step?: { prev: RangeKey; next: RangeKey | null; label: string }
 }
 
 const monthBuckets = (first: string, count: number, end: string): Bucket[] =>
@@ -58,13 +74,17 @@ const monthBuckets = (first: string, count: number, end: string): Bucket[] =>
     const s = addMonths(first, i)
     const last = addDays(addMonths(s, 1), -1)
     const e = last < end ? last : end
-    return { label: fmtMonth(s), full: `${fmtMonth(s)} ${s.slice(0, 4)}${e === end && e !== last ? ' (so far)' : ''}`, start: s, end: e }
+    return { label: fmtMonth(s), full: `${fmtMonth(s)} ${s.slice(0, 4)}${e === end && e !== last ? ' (so far)' : ''}`, start: s, end: e, go: monthHref(s) }
   }).filter((b) => b.start <= end)
+
+const dayBuckets = (start: string, end: string, label: (d: string) => string): Bucket[] =>
+  eachDay(start, end).map((d) => ({ label: label(d), full: fmtFull(d), start: d, end: d, go: dayHref(d) }))
 
 /**
  * @param dataStart earliest date loaded from Garmin; "all time" starts there.
  */
 export function makePeriod(range: RangeKey, end = today(), dataStart: string | null = null): Period {
+  const now = end
   const preset = RANGES.find((r) => r.key === range)
   let start: string
   let buckets: Bucket[]
@@ -74,23 +94,19 @@ export function makePeriod(range: RangeKey, end = today(), dataStart: string | n
   let adj = preset?.adj ?? ''
   let prevLabel = preset ? `previous ${preset.label}` : ''
   let prev: { start: string; end: string } | null = null
+  let step: Period['step']
 
   if (range === '7d' || range === '30d') {
     start = addDays(end, range === '7d' ? -6 : -29)
     bucketNoun = 'day'
-    buckets = eachDay(start, end).map((d) => ({
-      label: range === '7d' ? fmtWeekday(d) : fmtDay(d),
-      full: fmtFull(d),
-      start: d,
-      end: d,
-    }))
+    buckets = dayBuckets(start, end, range === '7d' ? fmtWeekday : fmtDay)
   } else if (range === '12w') {
     start = addDays(mondayOf(end), -77)
     bucketNoun = 'week'
     buckets = Array.from({ length: 12 }, (_, i) => {
       const s = addDays(start, i * 7)
       const e = addDays(s, 6) < end ? addDays(s, 6) : end
-      return { label: fmtDay(s), full: `Week of ${fmtDay(s)}${e === end && diffDays(s, e) < 6 ? ' (so far)' : ''}`, start: s, end: e }
+      return { label: fmtDay(s), full: `Week of ${fmtDay(s)}${e === end && diffDays(s, e) < 6 ? ' (so far)' : ''}`, start: s, end: e, go: weekHref(s) }
     })
   } else if (range === '12m') {
     start = addMonths(monthStart(end), -11)
@@ -108,11 +124,49 @@ export function makePeriod(range: RangeKey, end = today(), dataStart: string | n
       const s = `${y}-01-01` < start ? start : `${y}-01-01`
       const e = `${y}-12-31` > end ? end : `${y}-12-31`
       const part = s !== `${y}-01-01` ? ` (from ${fmtDay(s)})` : e !== `${y}-12-31` ? ' (so far)' : ''
-      buckets.push({ label: String(y), full: `${y}${part}`, start: s, end: e })
+      buckets.push({ label: String(y), full: `${y}${part}`, start: s, end: e, go: `?range=y${y}` })
     }
     // Nothing earlier to compare with.
     prev = { start: addDays(start, -1), end: addDays(start, -1) }
     prevLabel = ''
+  } else if (range.startsWith('w')) {
+    // One Monday-to-Sunday week, compared with the week before.
+    start = range.slice(1)
+    const last = addDays(start, 6)
+    end = last < now ? last : now
+    bucketNoun = 'day'
+    buckets = dayBuckets(start, end, (d) => `${fmtWeekday(d)} ${+d.slice(8)}`)
+    title = `week of ${fmtDay(start)} ${start.slice(0, 4)}${end !== last ? ' (so far)' : ''}`
+    adj = 'weekly'
+    prev = { start: addDays(start, -7), end: addDays(end, -7) }
+    prevLabel = 'previous week'
+    const next = addDays(start, 7)
+    step = { prev: `w${addDays(start, -7)}`, next: next <= now ? `w${next}` : null, label: `Week of ${fmtDay(start)}` }
+  } else if (range.startsWith('m')) {
+    // One calendar month, compared with the month before.
+    start = `${range.slice(1)}-01`
+    const last = addDays(addMonths(start, 1), -1)
+    end = last < now ? last : now
+    bucketNoun = 'day'
+    buckets = dayBuckets(start, end, fmtDay)
+    const name = `${fmtMonthLong(start)} ${start.slice(0, 4)}`
+    title = `${name}${end !== last ? ' so far' : ''}`
+    adj = 'monthly'
+    const prevStart = addMonths(start, -1)
+    const prevLast = addDays(start, -1)
+    const span = diffDays(start, end)
+    prev = { start: prevStart, end: end !== last && addDays(prevStart, span) < prevLast ? addDays(prevStart, span) : prevLast }
+    prevLabel = end !== last ? `same dates in ${fmtMonthLong(prevStart)}` : `${fmtMonthLong(prevStart)} ${prevStart.slice(0, 4)}`
+    const next = addMonths(start, 1)
+    step = { prev: `m${prevStart.slice(0, 7)}`, next: next <= now ? `m${next.slice(0, 7)}` : null, label: name }
+  } else if (range.startsWith('d')) {
+    // A single day (the Days page).
+    start = end = range.slice(1)
+    bucketNoun = 'day'
+    buckets = dayBuckets(start, end, fmtDay)
+    title = fmtFull(start)
+    adj = 'daily'
+    prevLabel = 'previous day'
   } else {
     // A calendar year.
     const y = +range.slice(1)
@@ -150,6 +204,7 @@ export function makePeriod(range: RangeKey, end = today(), dataStart: string | n
     weeklyTrend: trendUnit !== 'day',
     avgLabel: trendUnit === 'week' ? 'Weekly average' : trendUnit === 'month' ? 'Monthly average' : '',
     avgWord: trendUnit === 'week' ? 'Weekly' : trendUnit === 'month' ? 'Monthly' : 'Daily',
+    step,
   }
 }
 
@@ -249,7 +304,8 @@ export function actStat(
 
 // ---------------------------------------------------------------- chart rows
 
-export type Row = { label: string; full: string; [k: string]: string | number | null }
+/** A chart row. `go` is where clicking it leads (see dayHref and friends). */
+export type Row = { label: string; full: string; go?: string; [k: string]: string | number | null | undefined }
 
 /**
  * Rows for a trend of daily metrics: one per day, or one per week (mean of the
@@ -259,7 +315,7 @@ export function trendRows(p: Period, data: Dataset, picks: Record<string, (d: Da
   const keys = Object.keys(picks)
   if (!p.weeklyTrend) {
     return dayList(data, p.start, p.end).map((d) => {
-      const row: Row = { label: p.range === '7d' ? fmtWeekday(d.date) : fmtDay(d.date), full: fmtFull(d.date) }
+      const row: Row = { label: p.buckets.find((b) => b.start === d.date)?.label ?? fmtDay(d.date), full: fmtFull(d.date), go: dayHref(d.date) }
       for (const k of keys) row[k] = picks[k](d)
       return row
     })
@@ -270,7 +326,7 @@ export function trendRows(p: Period, data: Dataset, picks: Record<string, (d: Da
       const last = addDays(addMonths(s, 1), -1)
       const ds = dayList(data, s < p.start ? p.start : s, last < p.end ? last : p.end)
       const name = `${fmtMonth(s)} ${s.slice(0, 4)}`
-      const row: Row = { label: `${fmtMonth(s)} ${s.slice(2, 4)}`, full: `${name} (average)` }
+      const row: Row = { label: `${fmtMonth(s)} ${s.slice(2, 4)}`, full: `${name} (average)`, go: monthHref(s) }
       for (const k of keys) row[k] = mean(nums(ds.map(picks[k])))
       rows.push(row)
     }
@@ -279,7 +335,7 @@ export function trendRows(p: Period, data: Dataset, picks: Record<string, (d: Da
   for (let s = mondayOf(p.start); s <= p.end; s = addDays(s, 7)) {
     const e = addDays(s, 6) < p.end ? addDays(s, 6) : p.end
     const ds = dayList(data, s < p.start ? p.start : s, e)
-    const row: Row = { label: fmtDay(s), full: `Week of ${fmtDay(s)} (average)` }
+    const row: Row = { label: fmtDay(s), full: `Week of ${fmtDay(s)} (average)`, go: weekHref(s) }
     for (const k of keys) row[k] = mean(nums(ds.map(picks[k])))
     rows.push(row)
   }
@@ -293,7 +349,7 @@ export function bucketRows(
   series: Record<string, { filter?: (a: Activity) => boolean; value: (a: Activity) => number | null }>,
 ): Row[] {
   return p.buckets.map((b) => {
-    const row: Row = { label: b.label, full: b.full }
+    const row: Row = { label: b.label, full: b.full, go: b.go }
     for (const [k, s] of Object.entries(series)) {
       row[k] = sum(nums(actsIn(data, b.start, b.end, s.filter).map(s.value)))
     }
@@ -305,7 +361,7 @@ export function bucketRows(
 export function bucketDayRows(p: Period, data: Dataset, picks: Record<string, (d: Day) => number | null>): Row[] {
   return p.buckets.map((b) => {
     const ds = dayList(data, b.start, b.end)
-    const row: Row = { label: b.label, full: b.full }
+    const row: Row = { label: b.label, full: b.full, go: b.go }
     for (const [k, pick] of Object.entries(picks)) {
       const v = nums(ds.map(pick))
       row[k] = v.length ? sum(v) : null

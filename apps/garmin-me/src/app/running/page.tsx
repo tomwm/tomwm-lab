@@ -7,7 +7,7 @@ import { C, SPORT_COLOR } from '@/lib/colors'
 import { fmtDay, fmtFull } from '@/lib/dates'
 import { fmtHours, fmtInt, fmtOne, fmtPace } from '@/lib/format'
 import type { Activity } from '@/lib/garmin/normalize'
-import { actStat, actsIn, bucketRows, canCompare, makeDelta, mean, nums, sum } from '@/lib/metrics'
+import { actStat, actsIn, bucketRows, canCompare, dayHref, makeDelta, mean, nums, sum } from '@/lib/metrics'
 
 export const dynamic = 'force-dynamic'
 const isRun = (a: Activity) => a.sport === 'running'
@@ -48,9 +48,9 @@ function Running({ period, data }: Ctx) {
   const perRun = grouped
     ? period.buckets.map((b) => {
         const rs = actsIn(data, b.start, b.end, isRun)
-        return { label: b.label, full: `${b.full} · ${rs.length} run${rs.length === 1 ? '' : 's'}`, pace: avgPace(rs), hr: mean(nums(rs.map((a) => a.avgHr))) }
+        return { label: b.label, full: `${b.full} · ${rs.length} run${rs.length === 1 ? '' : 's'}`, go: b.go, pace: avgPace(rs), hr: mean(nums(rs.map((a) => a.avgHr))) }
       })
-    : chrono.map((a) => ({ label: fmtDay(a.date), full: `${a.name} · ${fmtFull(a.date)}`, pace: a.paceSecPerKm, hr: a.avgHr }))
+    : chrono.map((a) => ({ label: fmtDay(a.date), full: `${a.name} · ${fmtFull(a.date)}`, go: dayHref(a.date), pace: a.paceSecPerKm, hr: a.avgHr }))
 
   return (
     <>

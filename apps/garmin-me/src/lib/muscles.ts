@@ -128,3 +128,28 @@ export function topExercises(activities: Activity[], limit = 10): ExerciseRow[] 
     .sort((a, b) => b.sets - a.sets || b.reps - a.reps)
     .slice(0, limit)
 }
+
+export type DoneRow = { name: string; sets: number; role: 'main' | 'helper' }
+
+/** For each muscle, the exercises you did that worked it, most sets first. */
+export function exercisesByMuscle(activities: Activity[]): Record<Muscle, DoneRow[]> {
+  const out = Object.fromEntries(MUSCLES.map((m) => [m, new Map<string, DoneRow>()])) as Record<Muscle, Map<string, DoneRow>>
+  for (const a of activities) {
+    for (const e of a.exercises) {
+      const t = targetOf(e)
+      if (!t || e.sets <= 0) continue
+      const name = pretty(e.sub ?? e.category)
+      const add = (m: Muscle, role: DoneRow['role']) => {
+        const r = out[m].get(name) ?? { name, sets: 0, role }
+        r.sets += e.sets
+        if (role === 'main') r.role = 'main'
+        out[m].set(name, r)
+      }
+      t.main.forEach((m) => add(m, 'main'))
+      t.helpers?.forEach((m) => add(m, 'helper'))
+    }
+  }
+  return Object.fromEntries(
+    MUSCLES.map((m) => [m, [...out[m].values()].sort((a, b) => (a.role === b.role ? b.sets - a.sets : a.role === 'main' ? -1 : 1))]),
+  ) as Record<Muscle, DoneRow[]>
+}

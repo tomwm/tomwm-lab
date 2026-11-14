@@ -1,12 +1,18 @@
 import { hasApiKey } from '@/lib/garmin/client'
 import { MAX_SYNC_DAYS } from '@/lib/garmin/sync'
 import { loadData, type Dataset } from '@/lib/data'
-import { addDays, diffDays, fmtDate, fmtDay, today } from '@/lib/dates'
+import { addDays, diffDays, fmtDate, fmtDay, fmtFull, today } from '@/lib/dates'
 import { makePeriod, parseRange, type Period } from '@/lib/metrics'
 import { RangeSwitch, SyncControl, ThemeToggle } from './Controls'
 
-export type PageProps = { searchParams: Promise<{ range?: string }> }
+export type PageProps = { searchParams: Promise<{ range?: string; date?: string }> }
 export type Ctx = { period: Period; data: Dataset }
+
+/** A valid 'YYYY-MM-DD' no later than today, else today. */
+function parseDay(v: unknown): string {
+  const t = today()
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && v <= t ? v : t
+}
 
 /**
  * Page frame shared by every section: header with range switch, sync status
@@ -16,17 +22,22 @@ export async function Shell({
   title,
   searchParams,
   allTime,
+  dayView,
   children,
 }: {
   title: string
   searchParams: PageProps['searchParams']
   /** Page uses everything in the cache, so the range switch is hidden. */
   allTime?: boolean
+  /** The Days page: show one day (from ?date=, default today) with a day picker. */
+  dayView?: boolean
   children: (ctx: Ctx) => React.ReactNode
 }) {
   const hasKey = await hasApiKey()
   const data = loadData()
-  const period = makePeriod(parseRange((await searchParams).range), today(), data.syncedFrom)
+  const params = await searchParams
+  const day = dayView ? parseDay(params.date) : undefined
+  const period = makePeriod(day ? `d${day}` : parseRange(params.range), today(), data.syncedFrom)
   const firstYear = +(data.syncedFrom ?? today()).slice(0, 4)
   const years = Array.from({ length: +today().slice(0, 4) - firstYear + 1 }, (_, i) => +today().slice(0, 4) - i)
   const empty = data.activities.length === 0 && data.days.size === 0
@@ -44,11 +55,13 @@ export async function Shell({
           <p className="mt-1 text-sm text-muted">
             {allTime
               ? 'Playful views of your data. Each tile says which dates it covers.'
-              : `${fmtDate(period.start)} – ${fmtDate(period.end)} · ${period.title}`}
+              : day
+                ? `${fmtFull(day)}${day === today() ? ' · today' : ''}`
+                : `${fmtDate(period.start)} – ${fmtDate(period.end)} · ${period.title}`}
           </p>
         </div>
         <div className="flex flex-wrap items-start justify-end gap-3">
-          {!allTime && <RangeSwitch range={period.range} years={years} />}
+          {!allTime && <RangeSwitch range={period.range} years={years} step={period.step} day={day} minDay={data.syncedFrom} />}
           <ThemeToggle />
           <SyncControl wantFrom={wantFrom} wantDays={wantDays} />
         </div>

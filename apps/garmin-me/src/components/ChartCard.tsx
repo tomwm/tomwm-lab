@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import {
   Bar, CartesianGrid, ComposedChart, Line, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -8,7 +10,10 @@ import { formatTick, formatValue, type Fmt } from '@/lib/format'
 import { SourceTag, type Source } from './Kpi'
 
 export type Series = { key: string; name: string; color: string }
-export type ChartRow = { label: string; full?: string; [k: string]: string | number | null | undefined }
+/** `go`: where clicking this row leads, a path ('/day?…') or a query on the current page ('?range=…'). */
+export type ChartRow = { label: string; full?: string; go?: string; [k: string]: string | number | null | undefined }
+
+const clickHint = (go: string) => (go.startsWith('/day') ? 'Click to see this day' : 'Click to zoom in')
 
 type Props = {
   title: string
@@ -44,12 +49,21 @@ function TooltipBox({ active, payload, series, fmt }: { active?: boolean; payloa
           <span className="ml-auto pl-4 font-medium tabular-nums text-ink">{formatValue(fmt, row[s.key] as number)}</span>
         </div>
       ))}
+      {row.go && <div className="mt-1.5 border-t border-line pt-1.5 text-muted">{clickHint(row.go)}</div>}
     </div>
   )
 }
 
 export function ChartCard({ title, subtitle, source, data, series, kind, fmt, stacked, reversed, band, refLine, connectGaps, height = 220 }: Props) {
   const [table, setTable] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+  const href = (go: string) => (go.startsWith('?') ? pathname + go : go)
+  const clickable = data.some((r) => r.go)
+  const open = (i: number) => {
+    const go = data[i]?.go
+    if (go) router.push(href(go), { scroll: !go.startsWith('?') })
+  }
   const all = data.flatMap((r) => series.map((s) => r[s.key])).filter((v): v is number => typeof v === 'number')
   const hasData = kind === 'bar' ? all.some((v) => v > 0) : all.length > 0
   // Only list series that appear, but never recolour them.
@@ -130,7 +144,15 @@ export function ChartCard({ title, subtitle, source, data, series, kind, fmt, st
               <tbody>
                 {data.map((r, i) => (
                   <tr key={i} className="border-t border-line">
-                    <td className="py-1.5 pr-3 text-ink-2">{r.full ?? r.label}</td>
+                    <td className="py-1.5 pr-3 text-ink-2">
+                      {r.go ? (
+                        <Link href={href(r.go)} scroll={!r.go.startsWith('?')} className="underline decoration-line underline-offset-2 hover:text-ink">
+                          {r.full ?? r.label}
+                        </Link>
+                      ) : (
+                        (r.full ?? r.label)
+                      )}
+                    </td>
                     {present.map((s) => (
                       <td key={s.key} className="py-1.5 pr-3 text-right text-ink">
                         {typeof r[s.key] === 'number' ? formatValue(fmt, r[s.key] as number) : '–'}
@@ -143,7 +165,18 @@ export function ChartCard({ title, subtitle, source, data, series, kind, fmt, st
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barCategoryGap="20%">
+            <ComposedChart
+              // Remount when the range changes so no stale hover state carries over.
+              key={`${data[0]?.full ?? ''}|${data.length}`}
+              data={data}
+              margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+              barCategoryGap="20%"
+              style={clickable ? { cursor: 'pointer' } : undefined}
+              onClick={(state: { activeTooltipIndex?: number | string | null }) => {
+                const i = Number(state?.activeTooltipIndex)
+                if (Number.isInteger(i)) open(i)
+              }}
+            >
               <CartesianGrid vertical={false} stroke="var(--grid)" />
               <XAxis
                 dataKey="label"

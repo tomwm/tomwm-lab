@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { formatValue, type Fmt } from '@/lib/format'
 import type { Source } from '../Kpi'
@@ -15,6 +16,7 @@ const DAYS = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun']
 /** One square per day, a column per week. Colour is one hue, five steps by quintile. */
 export function YearPixels({ weeks, months, metrics }: { weeks: PixelDay[][]; months: { col: number; label: string }[]; metrics: PixelMetric[] }) {
   const [key, setKey] = useState(metrics[0].key)
+  const router = useRouter()
   const metric = metrics.find((m) => m.key === key)!
   const values = weeks.flat().map((d) => d.v[key]).filter((v): v is number => v !== null).sort((a, b) => a - b)
   const q = (p: number) => values[Math.min(values.length - 1, Math.floor(p * values.length))]
@@ -63,8 +65,10 @@ export function YearPixels({ weeks, months, metrics }: { weeks: PixelDay[][]; mo
                   height={CELL}
                   rx={3}
                   fill={v === null ? 'var(--wash)' : `var(--z${step(v)})`}
+                  onClick={() => router.push(`/day?date=${d.date}`)}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <title>{`${d.full}: ${v === null ? 'nothing recorded' : formatValue(metric.fmt, v)}`}</title>
+                  <title>{`${d.full}: ${v === null ? 'nothing recorded' : formatValue(metric.fmt, v)}. Click to see this day.`}</title>
                 </rect>
               )
             }),

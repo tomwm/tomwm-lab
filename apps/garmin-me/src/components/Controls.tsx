@@ -6,50 +6,129 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { RANGES, type RangeKey } from '@/lib/metrics'
 import type { SyncStatus } from '@/lib/garmin/sync'
 
-export function RangeSwitch({ range, years }: { range: RangeKey; years: number[] }) {
+const PILL = 'inline-flex items-center rounded-full border border-line bg-surface p-0.5'
+const ITEM = 'rounded-full px-3 py-1.5 text-xs font-medium tabular-nums transition-colors'
+const ARROW = 'inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-2 hover:bg-wash hover:text-ink'
+
+function Arrow({ href, dir, label }: { href: string | null; dir: 'prev' | 'next'; label: string }) {
+  const icon = (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
+      <path d={dir === 'prev' ? 'M7.5 2.5 4 6l3.5 3.5' : 'M4.5 2.5 8 6 4.5 9.5'} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+  return href ? (
+    <Link href={href} scroll={false} aria-label={label} title={label} className={ARROW}>{icon}</Link>
+  ) : (
+    <span aria-hidden className={`${ARROW} opacity-30`}>{icon}</span>
+  )
+}
+
+/**
+ * The time range control: 1D (the Days page), rolling ranges, and a menu of
+ * years. On a single week, month or day it also shows that period with
+ * arrows to step backwards and forwards.
+ */
+export function RangeSwitch({
+  range,
+  years,
+  step,
+  day,
+  minDay,
+}: {
+  range: RangeKey
+  years: number[]
+  step?: { prev: string; next: string | null; label: string }
+  /** Set on the Days page: the day being shown. */
+  day?: string
+  /** Earliest day with data, for the date picker. */
+  minDay?: string | null
+}) {
   const pathname = usePathname()
   const router = useRouter()
-  const longRange = range === 'all' || range.startsWith('y')
+  // From the Days page, the rolling ranges go back to the Overview.
+  const base = day ? '/' : pathname
+  const longRange = !day && (range === 'all' || range.startsWith('y'))
+  const now = new Date()
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const shift = (d: string, n: number) => {
+    const x = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10) + n)
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
+  }
+
   return (
-    <div role="group" aria-label="Time range" className="inline-flex items-center rounded-full border border-line bg-surface p-0.5">
-      {RANGES.map((r) => (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {day && (
+        <div className={PILL}>
+          <Arrow href={`/day?date=${shift(day, -1)}`} dir="prev" label="Previous day" />
+          <input
+            type="date"
+            aria-label="Pick a day"
+            value={day}
+            max={todayIso}
+            min={minDay ?? undefined}
+            onChange={(e) => e.target.value && router.push(`/day?date=${e.target.value}`, { scroll: false })}
+            className="rounded-full bg-transparent px-1.5 py-1 text-xs font-medium tabular-nums text-ink outline-offset-2 [color-scheme:inherit]"
+          />
+          <Arrow href={day < todayIso ? `/day?date=${shift(day, 1)}` : null} dir="next" label="Next day" />
+          {day !== todayIso && (
+            <Link href="/day" scroll={false} className={`${ITEM} text-ink-2 hover:text-ink`}>Today</Link>
+          )}
+        </div>
+      )}
+      {step && !day && (
+        <div className={PILL}>
+          <Arrow href={`${pathname}?range=${step.prev}`} dir="prev" label="Previous" />
+          <span className={`${ITEM} bg-ink text-page`}>{step.label}</span>
+          <Arrow href={step.next ? `${pathname}?range=${step.next}` : null} dir="next" label="Next" />
+        </div>
+      )}
+      <div role="group" aria-label="Time range" className={PILL}>
         <Link
-          key={r.key}
-          href={`${pathname}?range=${r.key}`}
+          href="/day"
           scroll={false}
-          aria-current={r.key === range ? 'true' : undefined}
-          title={`Last ${r.label}`}
-          className={`rounded-full px-3 py-1.5 text-xs font-medium tabular-nums transition-colors ${
-            r.key === range ? 'bg-ink text-page' : 'text-ink-2 hover:text-ink'
-          }`}
+          aria-current={day ? 'true' : undefined}
+          title="One day: everything you did and how you slept"
+          className={`${ITEM} ${day ? 'bg-ink text-page' : 'text-ink-2 hover:text-ink'}`}
         >
-          {r.short}
+          1D
         </Link>
-      ))}
-      {/* Calendar years and all time, for looking further back than 12 months. */}
-      <select
-        aria-label="Pick a year or all time"
-        value={longRange ? range : ''}
-        onChange={(e) => e.target.value && router.push(`${pathname}?range=${e.target.value}`, { scroll: false })}
-        className={`cursor-pointer appearance-none rounded-full py-1.5 pl-3 pr-6 text-xs font-medium tabular-nums outline-offset-2 ${
-          longRange ? 'bg-ink text-page' : 'bg-transparent text-ink-2 hover:text-ink'
-        }`}
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%23898781' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'right 9px center',
-        }}
-      >
-        <option value="" disabled>
-          Year
-        </option>
-        <option value="all">All time</option>
-        {years.map((y) => (
-          <option key={y} value={`y${y}`}>
-            {y}
-          </option>
+        {RANGES.map((r) => (
+          <Link
+            key={r.key}
+            href={`${base}?range=${r.key}`}
+            scroll={false}
+            aria-current={!day && r.key === range ? 'true' : undefined}
+            title={`Last ${r.label}`}
+            className={`${ITEM} ${!day && r.key === range ? 'bg-ink text-page' : 'text-ink-2 hover:text-ink'}`}
+          >
+            {r.short}
+          </Link>
         ))}
-      </select>
+        {/* Calendar years and all time, for looking further back than 12 months. */}
+        <select
+          aria-label="Pick a year or all time"
+          value={longRange ? range : ''}
+          onChange={(e) => e.target.value && router.push(`${base}?range=${e.target.value}`, { scroll: false })}
+          className={`cursor-pointer appearance-none rounded-full py-1.5 pl-3 pr-6 text-xs font-medium tabular-nums outline-offset-2 ${
+            longRange ? 'bg-ink text-page' : 'bg-transparent text-ink-2 hover:text-ink'
+          }`}
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%23898781' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 9px center',
+          }}
+        >
+          <option value="" disabled>
+            Year
+          </option>
+          <option value="all">All time</option>
+          {years.map((y) => (
+            <option key={y} value={`y${y}`}>
+              {y}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 }
