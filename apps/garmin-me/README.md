@@ -19,6 +19,25 @@ This app is deliberately **not** part of the repo's npm workspace (see
 built for the website, and keeping it out means its dependencies can't
 disturb the shared lockfile the site deploys from.
 
+### One-click app
+
+```bash
+npm --prefix apps/garmin-me run app:install
+```
+
+This creates **Garmin Me** in `~/Applications`. Open it from Spotlight or
+Launchpad and keep it in the Dock.
+
+- **Open it:** starts the local server and opens the dashboard in your browser.
+- **Click the Dock icon again:** reopens the dashboard.
+- **Quit it:** stops the server. Nothing runs while the app is closed.
+
+It runs the optimised production build (in `.next-app`, separate from the
+`.next` folder `npm run dev` uses) and rebuilds automatically the next time
+you open it after the code has changed. Logs go to
+`~/Library/Logs/garmin-me.log`. Re-run `app:install` if you move the repo.
+The same thing without the app: `npm run app:start`, `app:stop`, `app:status`.
+
 The first page load starts a sync. Recent data appears within a minute.
 Choosing a longer range loads older history in the background (see *Rate
 limits*).
