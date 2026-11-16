@@ -94,6 +94,14 @@ export async function syncFrom(start: string) {
     if (list.length < 200) break
   }
 
+  // Heart rate zones as set in Garmin Connect (one small request).
+  try {
+    const zones = await garminGet<unknown>('/biometric-service/heartRateZones/v2')
+    if (Array.isArray(zones)) putRaw('zones', 'current', zones)
+  } catch (e) {
+    if (isFatal(e)) throw e
+  }
+
   // 2. HRV, in chunks (the range endpoint rejects long spans)
   state.phase = 'HRV'
   for (let from = start; from <= end; from = addDays(from, HRV_CHUNK_DAYS)) {

@@ -8,7 +8,7 @@ import { chmodSync, mkdirSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { DATA_DIR, DB_FILE } from './config'
 
-export type RawKind = 'activity' | 'summary' | 'sleep' | 'hrv' | 'weight'
+export type RawKind = 'activity' | 'summary' | 'sleep' | 'hrv' | 'weight' | 'zones'
 
 const g = globalThis as unknown as { __garminDb?: DatabaseSync }
 
@@ -26,6 +26,8 @@ export function db(): DatabaseSync {
         PRIMARY KEY (kind, key)
       );
       CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      -- The coach's last answer of each kind (workout, insights), so a revisit doesn't re-run the model.
+      CREATE TABLE IF NOT EXISTS ai_results (kind TEXT PRIMARY KEY, json TEXT NOT NULL, created_at INTEGER NOT NULL);
     `)
     try {
       chmodSync(DB_FILE, 0o600) // personal health data: owner-only
@@ -60,4 +62,13 @@ export function getMeta(key: string): string | null {
 
 export function setMeta(key: string, value: string) {
   db().prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
+}
+
+export function getAiResult<T>(kind: string): T | null {
+  const row = db().prepare('SELECT json FROM ai_results WHERE kind = ?').get(kind) as { json: string } | undefined
+  return row ? (JSON.parse(row.json) as T) : null
+}
+
+export function putAiResult(kind: string, value: unknown) {
+  db().prepare('INSERT OR REPLACE INTO ai_results (kind, json, created_at) VALUES (?, ?, ?)').run(kind, JSON.stringify(value), Date.now())
 }

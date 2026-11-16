@@ -68,6 +68,7 @@ limits*).
 | Running | Distance, runs, pace, heart rate, distance per period, time in HR zones, pace and HR per run |
 | Recovery | HRV (with Garmin's baseline range), resting HR, sleep stages and score, Body Battery, stress |
 | Strength | Sessions, time, session length and heart rate. Garmin has no sets/reps/weights for these sessions |
+| Coach | Today's workout, insights and questions answered by a local AI model (see below) |
 | Health | Steps, intensity minutes, stress, active calories, SpO2, weight and body composition, and all other sports |
 
 Ranges: 7 days, 30 days, 12 weeks (weekly buckets), 12 months (monthly buckets,
@@ -76,6 +77,47 @@ totals and averages of it), amber for a figure this app estimates that Garmin
 doesn't report, such as average pace across runs or a projected finish date.
 Days with no recording are shown as gaps, never as zero. None of this is
 medical advice.
+
+## Coach (local AI)
+
+The **Coach** section suggests today's workout, writes insights about how
+you're doing, and answers plain-English questions about your history. It uses
+a model running on this Mac through [Ollama](https://ollama.com), so nothing
+leaves your computer.
+
+- **Needs:** Ollama running, with the model pulled: `ollama pull gemma4:12b`.
+- **Model:** set `GARMIN_ME_AI_MODEL` (e.g. `qwen2.5:7b`) in `.env.local` to
+  switch. All model calls go through `src/lib/ai/provider.ts`, so adding a
+  hosted provider later is a change in that one file.
+- **How it stays accurate:** the app calculates every figure itself
+  (`src/lib/ai/context.ts`); the model only reads a short text brief and
+  writes the advice. Workout and insight replies must follow a fixed JSON
+  shape, and any figure quoted as evidence that isn't in the brief is flagged
+  "check" (`src/lib/ai/check.ts`). Questions use read-only lookup tools over the
+  local data (`src/lib/ai/ask.ts`). "What the coach was given" on each card
+  shows exactly what the model saw.
+- **Your profile and plans are private files**, outside the repository, in
+  `~/Library/Application Support/garmin-me/private/`: `profile.json` (goals,
+  equipment, limitations, benchmarks, race date) and `strength-plan.json`.
+  Edit them there. Without them the coach works from your data alone.
+- **Training plan:** a day-by-day plan exported from Numbers as CSV into a
+  folder inside `private/`, named by `trainingPlanFolder` in `profile.json`
+  (`Daily Sessions-Table 1.csv`, plus optional `Weekly Plan-Table 1.csv` and
+  `Overview-Table 1.csv`). Re-export over the same files to update it. The
+  coach starts from today's planned sessions, and the Coach page shows the week
+  planned against done. Zero-minute rows are treated as not scheduled.
+- **Heart rate zones** are fetched from Garmin Connect during sync, so the coach
+  can turn "Z1–2" into heart rates.
+- **Plan tracking:** the Coach page shows which plan sessions are done this week,
+  matched from the exercises Garmin recognised (a best guess; "probably" means
+  it went by the plan's order). Workout suggestions say which plan session they
+  follow, and the app itself lists every difference from the plan.
+- **Running phase (only without a training plan):** the strength plan's
+  running-heavy options apply when the 4-week average reaches 30 km/week or a run
+  in the last 14 days reaches 16 km (`higherVolumeRunning` in profile.json). With
+  a day-by-day plan, the plan's schedule decides instead.
+- Expect about 20 to 30 seconds per workout or insight set, and 5 to 40 seconds
+  per question. Not medical advice.
 
 ## How it fits together
 

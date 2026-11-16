@@ -23,6 +23,7 @@ export async function Shell({
   searchParams,
   allTime,
   dayView,
+  subtitle,
   children,
 }: {
   title: string
@@ -31,6 +32,8 @@ export async function Shell({
   allTime?: boolean
   /** The Days page: show one day (from ?date=, default today) with a day picker. */
   dayView?: boolean
+  /** Replaces the date line under the title on all-time pages. */
+  subtitle?: string
   children: (ctx: Ctx) => React.ReactNode
 }) {
   const hasKey = await hasApiKey()
@@ -54,7 +57,7 @@ export async function Shell({
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted">
             {allTime
-              ? 'Playful views of your data. Each tile says which dates it covers.'
+              ? (subtitle ?? 'Playful views of your data. Each tile says which dates it covers.')
               : day
                 ? `${fmtFull(day)}${day === today() ? ' · today' : ''}`
                 : `${fmtDate(period.start)} – ${fmtDate(period.end)} · ${period.title}`}

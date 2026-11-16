@@ -9,6 +9,7 @@ const ICONS: Record<string, React.ReactNode> = {
   recovery: <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />,
   strength: <path d="M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12" />,
   experiment: <path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7.500 15h9" />,
+  coach: <path d="M12 3l1.8 4.6L18.5 9l-4.7 1.5L12 15l-1.8-4.5L5.5 9l4.7-1.4zM18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8zM6 15l.6 1.4 1.4.6-1.4.6L6 19l-.6-1.4L4 17l1.4-.6z" />,
   health: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.600-7 10-7 10z" />,
 }
 
@@ -18,6 +19,7 @@ const NAV = [
   { href: '/recovery', label: 'Recovery', icon: 'recovery' },
   { href: '/strength', label: 'Strength', icon: 'strength' },
   { href: '/health', label: 'Health', icon: 'health' },
+  { href: '/coach', label: 'Coach', icon: 'coach' },
 ]
 /** Desktop sidebar only; not shown in the phone tab bar. */
 const EXTRA = [{ href: '/experiment', label: 'Experiment', icon: 'experiment' }]
@@ -64,6 +66,7 @@ export function Sidebar() {
           <ul className="mb-3 space-y-1" aria-label="Key to the dot on each card">
             <li className="flex items-center gap-2"><span className="h-[7px] w-[7px] rounded-full" style={{ background: 'var(--muted)' }} />Garmin data</li>
             <li className="flex items-center gap-2"><span className="h-[7px] w-[7px] rounded-full" style={{ background: 'var(--s4)' }} />Estimated by this app</li>
+            <li className="flex items-center gap-2"><span className="h-[7px] w-[7px] rounded-full" style={{ background: 'var(--s7)' }} />Written by AI</li>
           </ul>
           <p>Read-only. Your data stays on this Mac. Not medical advice.</p>
         </div>

@@ -1,11 +1,15 @@
 import type { Delta } from '@/lib/metrics'
 
-export type Source = 'garmin' | 'estimate'
+export type Source = 'garmin' | 'estimate' | 'ai'
 
 export const SOURCE_TEXT: Record<Source, string> = {
   garmin: "Garmin's own data, including simple totals and averages of it",
   estimate: "Estimated by this app from Garmin data. Garmin doesn't report this figure, so treat it as a guide",
+  ai: 'Written by an AI model running on this Mac, from your data. Check the figures; not medical advice',
 }
+
+export const SOURCE_COLOR: Record<Source, string> = { garmin: 'var(--muted)', estimate: 'var(--s4)', ai: 'var(--s7)' }
+export const SOURCE_NAME: Record<Source, string> = { garmin: 'Garmin data', estimate: 'Estimate', ai: 'Written by AI' }
 
 /** A small dot saying where a figure comes from: grey for Garmin, amber for an estimate. */
 export function SourceTag({ source }: { source: Source }) {
@@ -13,9 +17,9 @@ export function SourceTag({ source }: { source: Source }) {
     <span className="group relative inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center" title={SOURCE_TEXT[source]}>
       <span
         className="h-[7px] w-[7px] rounded-full"
-        style={source === 'garmin' ? { background: 'var(--muted)' } : { background: 'var(--s4)' }}
+        style={{ background: SOURCE_COLOR[source] }}
         role="img"
-        aria-label={source === 'garmin' ? 'Garmin data' : 'Estimate'}
+        aria-label={SOURCE_NAME[source]}
       />
     </span>
   )
