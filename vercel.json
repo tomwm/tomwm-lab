@@ -7,6 +7,7 @@
     { "source": "/uk-gov-network-graph/:path*", "destination": "/uk-gov-network-graph/index.html" },
     { "source": "/smile",                       "destination": "/smile/index.html" },
     { "source": "/history-timeline/:path*",      "destination": "/history-timeline/index.html" },
+    { "source": "/isobar/:path*",                "destination": "/isobar/index.html" },
     { "source": "/morgan-map/api/:path*",        "destination": "https://morgan-map.vercel.app/api/:path*" },
     { "source": "/morgan-map/:path*",            "destination": "https://morgan-map.vercel.app/:path*" },
     { "source": "/morgan-map",                   "destination": "https://morgan-map.vercel.app" },
