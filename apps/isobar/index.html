@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Isobar</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="title">
+          <h1>Isobar</h1>
+          <p id="summary">Loading the weather…</p>
+        </div>
+        <div class="place">
+          <div class="search">
+            <label for="place-input">Location</label>
+            <input id="place-input" type="search" placeholder="Search for a place" autocomplete="off" />
+            <ul id="place-results" hidden></ul>
+          </div>
+          <button id="locate" type="button">Use my location</button>
+          <div class="view-toggle" role="group" aria-label="How to choose a location">
+            <button id="view-search" type="button" aria-pressed="true">Search</button>
+            <button id="view-map" type="button" aria-pressed="false">Map</button>
+          </div>
+        </div>
+      </header>
+
+      <p id="status" class="status" role="status"></p>
+
+      <details id="sec-map" class="panel" open hidden>
+        <summary>Map</summary>
+        <div id="map" class="map" aria-label="World map location picker"></div>
+      </details>
+
+      <details id="sec-controls" class="panel" open>
+        <summary>Weather controls</summary>
+        <div class="controls-bar">
+          <p class="hint">The weather sets each reading. The depth fader sets how much it shapes the sound.</p>
+          <button id="reset-depths" type="button">Reset all to 100%</button>
+        </div>
+        <div id="modules" class="modules"></div>
+      </details>
+
+      <section class="play" aria-label="Audio and MIDI">
+        <div class="play-bar">
+          <button id="power" type="button" class="primary">Start audio</button>
+          <button id="midi" type="button">Connect MIDI keyboard</button>
+          <span id="midi-status" class="hint"></span>
+          <label class="volume">Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" /></label>
+          <canvas id="scope" width="160" height="36" aria-hidden="true"></canvas>
+        </div>
+        <div id="layers" class="layers" aria-label="Generative layers">
+          <span data-layer="arp">Arpeggio</span>
+          <span data-layer="rain">Droplets</span>
+          <span data-layer="drone">Drone</span>
+          <span data-layer="gust">Gust</span>
+          <span data-layer="thunder">Thunder</span>
+          <button id="latch" type="button" aria-pressed="false" title="Hold notes and chords after you let go">Latch</button>
+        </div>
+      </section>
+
+      <details id="sec-keys" class="panel boxed" open>
+        <summary>Keyboard</summary>
+        <div id="keyboard" class="keyboard"></div>
+        <p class="hint">Play with the mouse, a MIDI keyboard, or the computer keys A to ; (W E T Y U O P are the black notes). Z and X shift the octave<span id="octave"></span>.</p>
+      </details>
+
+      <details id="sec-seq" class="panel boxed" open>
+        <summary>Step sequencer</summary>
+        <div class="seq">
+          <div class="seq-bar">
+            <button id="seq-record" type="button">Record</button>
+            <button id="seq-play" type="button">Play</button>
+            <button id="seq-rest" type="button">Add rest</button>
+            <button id="seq-clear" type="button">Clear</button>
+            <label>Steps
+              <select id="seq-max">
+                <option>4</option><option>8</option><option>12</option><option>16</option><option>32</option>
+              </select>
+            </label>
+            <label>Step length
+              <select id="seq-rate">
+                <option value="1">Sixteenth note</option>
+                <option value="2">Eighth note</option>
+                <option value="4">Quarter note</option>
+                <option value="8">Half note</option>
+              </select>
+            </label>
+          </div>
+          <ol id="seq-steps" class="seq-steps"></ol>
+          <p id="seq-status" class="hint" role="status"></p>
+        </div>
+      </details>
+
+      <details class="test">
+        <summary>Test with other weather</summary>
+        <p class="hint">Scrub through the last 30 days and the next 2 days of this location's weather. For testing only: real playing uses now.</p>
+        <div class="scrub">
+          <input id="scrub" type="range" min="-720" max="48" step="1" value="0" aria-label="Hours from now" />
+          <span id="scrub-label">Now</span>
+          <button id="scrub-reset" type="button">Back to now</button>
+        </div>
+      </details>
+
+      <footer>Weather and air quality data from <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a>.</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -36,6 +36,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:tara-cards"],
       "port": 5181
+    },
+    {
+      "name": "isobar",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:isobar"],
+      "port": 5182
     }
   ]
 }
