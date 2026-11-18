@@ -42,6 +42,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:isobar"],
       "port": 5182
+    },
+    {
+      "name": "isobeats",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:isobeats"],
+      "port": 5183
     }
   ]
 }

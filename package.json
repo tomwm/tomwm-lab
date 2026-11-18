@@ -22,6 +22,7 @@
     "dev:revisionlab": "npm --prefix apps/revisionlab run dev",
     "dev:tara-cards": "npm --prefix apps/tara-cards run dev",
     "dev:isobar": "npm -w apps/isobar run dev",
+    "dev:isobeats": "npm -w apps/isobeats run dev",
     "test:tara-cards": "npm --prefix apps/tara-cards run test"
   },
   "overrides": {

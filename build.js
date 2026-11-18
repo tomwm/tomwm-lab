@@ -16,6 +16,7 @@ const apps = [
   'smile',
   'history-timeline',
   'isobar',
+  'isobeats',
 ]
 
 mkdirSync(join(__dirname, 'dist'), { recursive: true })

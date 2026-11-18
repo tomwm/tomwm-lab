@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Isobeats</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="title">
+          <h1>Isobeats</h1>
+          <p id="summary">Loading the weather…</p>
+          <div id="target" class="target" role="group" aria-label="Which rows a new place applies to">
+            <span class="target-label">Place for</span>
+            <div class="seg">
+              <button type="button" data-target="all" aria-pressed="true">Everything</button>
+              <button type="button" data-target="0" aria-pressed="false"><i style="--c: var(--row0)"></i>Voice</button>
+              <button type="button" data-target="1" aria-pressed="false"><i style="--c: var(--row1)"></i>Groove</button>
+              <button type="button" data-target="2" aria-pressed="false"><i style="--c: var(--row2)"></i>Space</button>
+            </div>
+            <button id="join" type="button" class="link" hidden></button>
+          </div>
+        </div>
+        <div class="place">
+          <div class="search">
+            <label id="place-label" for="place-input">Location</label>
+            <input id="place-input" type="search" placeholder="Search for a place" autocomplete="off" />
+            <ul id="place-results" hidden></ul>
+          </div>
+          <button id="locate" type="button">Use my location</button>
+          <div class="view-toggle" role="group" aria-label="How to choose a location">
+            <button id="view-search" type="button" aria-pressed="true">Search</button>
+            <button id="view-map" type="button" aria-pressed="false">Map</button>
+          </div>
+        </div>
+      </header>
+
+      <p id="status" class="status" role="status"></p>
+
+      <details id="sec-map" class="panel" open hidden>
+        <summary>Map</summary>
+        <div id="map" class="map" aria-label="World map location picker"></div>
+      </details>
+
+      <details id="sec-controls" class="panel" open>
+        <summary>Weather controls</summary>
+        <div class="controls-bar">
+          <p class="hint">The weather sets each reading. The depth fader sets how much it shapes the beat.</p>
+          <button id="reset-depths" type="button">Reset all to 100%</button>
+        </div>
+        <div id="modules" class="modules"></div>
+      </details>
+
+      <section class="play" aria-label="Audio and MIDI">
+        <div class="play-bar">
+          <button id="run" type="button" class="primary" aria-pressed="false">Run</button>
+          <button id="midi" type="button">Connect MIDI</button>
+          <button id="rec-audio" type="button" title="Records what you hear, up to 10 seconds, to a WAV file">Record audio</button>
+          <span id="rec-status" class="hint" role="status"></span>
+          <span id="midi-status" class="hint"></span>
+          <label class="volume">Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" /></label>
+          <canvas id="scope" width="160" height="36" aria-hidden="true"></canvas>
+        </div>
+        <div id="layers" class="layers" aria-label="Generative layers">
+          <span data-layer="accent">Accent</span>
+          <span data-layer="roll">Roll</span>
+          <span data-layer="ghost">Ghost</span>
+          <span data-layer="fill">Fill</span>
+          <span data-layer="hats">Hats</span>
+          <span data-layer="thunder">Thunder</span>
+          <span class="tempo" id="tempo">110 bpm</span>
+        </div>
+      </section>
+
+      <details id="sec-seq" class="panel boxed" open>
+        <summary>Sequencer</summary>
+        <div class="seq-bar">
+          <button id="hit" type="button" title="Play the current step and move on">Trigger</button>
+          <button id="advance" type="button" title="Move to the next step without playing it">Advance</button>
+          <button id="reset" type="button" title="Go back to step 1">Reset</button>
+          <span class="divider" aria-hidden="true"></span>
+          <div class="transpose" role="group" aria-label="Transpose">
+            <span>Transpose</span>
+            <button id="tr-down" type="button" aria-label="Transpose down a semitone">−</button>
+            <output id="tr-value">0</output>
+            <button id="tr-up" type="button" aria-label="Transpose up a semitone">+</button>
+          </div>
+          <label>Steps
+            <select id="length">
+              <option value="8">8</option>
+              <option value="16">16</option>
+            </select>
+          </label>
+          <span class="divider" aria-hidden="true"></span>
+          <button id="randomise" type="button">Randomise</button>
+          <button id="default" type="button">Default pattern</button>
+          <button id="clear" type="button">Clear</button>
+        </div>
+        <div id="steps" class="steps"></div>
+        <p class="hint">Each step has a pitch and a velocity. Low pitches with a long drop are kicks, middle ones toms, high ones blips. Velocity 0 is a rest, and steps under 50% are quiet steps that the moon thins out. Drag a knob up or down (Shift for fine), scroll, or use the arrow keys; double-click to reset. Space runs and stops; Z and X transpose. A MIDI note transposes the pattern; when stopped, it also triggers the current step.</p>
+      </details>
+
+      <details class="test">
+        <summary>Test with other weather</summary>
+        <p class="hint">Scrub through the last 30 days and the next 2 days of this location's weather. For testing only: real playing uses now.</p>
+        <div class="scrub">
+          <input id="scrub" type="range" min="-720" max="48" step="1" value="0" aria-label="Hours from now" />
+          <span id="scrub-label">Now</span>
+          <button id="scrub-reset" type="button">Back to now</button>
+        </div>
+      </details>
+
+      <footer>Weather and air quality data from <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a>. Sister to <a href="/isobar">Isobar</a>.</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
