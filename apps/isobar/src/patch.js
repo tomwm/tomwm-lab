@@ -12,6 +12,8 @@ const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 const compass = (deg) => COMPASS[Math.round(deg / 45) % 8]
 
 export const ROWS = ['Tone and space', 'Movement and rhythm', 'Colour and drama']
+export const ROW_SHORT = ['Tone', 'Movement', 'Colour']
+export const ROW_COLOURS = ['#f0a35e', '#6fb6ff', '#d98be0']
 
 export const MODULES = [
   { id: 'temp', row: 0, label: 'Temperature', drives: 'Oscillator tone' },
@@ -30,6 +32,50 @@ export const MODULES = [
   { id: 'layers', row: 2, label: 'Cloud layers', drives: 'Three-band tone' },
   { id: 'moon', row: 2, label: 'Moon', drives: 'Night mood and shimmer' },
 ]
+
+// The synth settings each module produces. When the rows are in different
+// places, each setting is taken from its module's row.
+const OWNS = {
+  temp: ['triLevel', 'sawLevel', 'glassLevel', 'fmIndex', 'sawDetune'],
+  pressure: ['subLevel', 'driftCents', 'droneLevel', 'tension'],
+  cloud: ['cutoff', 'filterQ', 'pattern'],
+  wind: ['bpm', 'tremRate', 'tremDepth', 'pan', 'autopanDepth', 'autopanRate', 'arpLevel'],
+  gust: ['gustRate', 'gustCents', 'gustNoise', 'swing'],
+  rain: ['rainLevel', 'rainProb', 'snow'],
+  humidity: ['reverbWet', 'reverbSize', 'release'],
+  fog: ['chorusWet', 'attack'],
+  sun: ['harmony', 'harmLevel', 'fmRatio', 'tiltDb'],
+  air: ['crushWet', 'crushSteps'],
+  waves: ['delayTime', 'delayWet', 'delayFeedback'],
+  storm: ['driveWet', 'rumble', 'thunderRate', 'thunderLevel'],
+  character: ['perc', 'percLevel'],
+  layers: ['lowDb', 'midDb', 'highDb'],
+  moon: ['moonLevel'],
+}
+const ROW_OF = {}
+for (const m of MODULES) for (const key of OWNS[m.id]) ROW_OF[key] = m.row
+
+const echoEvery = (bpm) => (3 * 60) / bpm / 4
+const echoText = (n, delayTime) => `Echo ${pct(n)}, every ${delayTime.toFixed(2)}s (wind's clock)`
+
+// Combine one patch per row into the patch the engine plays.
+export function mergePatches([p0, p1, p2]) {
+  const rows = [p0, p1, p2]
+  if (p0 === p1 && p1 === p2) return p0
+  const out = { readings: {}, effects: {}, values: {} }
+  for (const key of Object.keys(p0)) {
+    if (key in out) continue
+    if (!(key in ROW_OF)) console.warn(`Isobar: no row owns the setting "${key}"`)
+    out[key] = rows[ROW_OF[key] ?? 0][key]
+  }
+  for (const m of MODULES) {
+    for (const group of ['readings', 'effects', 'values']) out[group][m.id] = rows[m.row][group][m.id]
+  }
+  // Everything keeps one tempo: the echo follows the Movement row's wind
+  out.delayTime = echoEvery(out.bpm)
+  out.effects.waves = echoText(out.values.waves, out.delayTime)
+  return out
+}
 
 // How each kind of rain plays as percussion. Probabilities are per clock step.
 //   tick: short noise hit (freq = how bright, decay in seconds)
@@ -128,7 +174,7 @@ export function computePatch(w, d) {
     crushWet: d.air * w.air.n * 0.8,
     crushSteps: Math.round(24 - w.air.n * 20),
     // Waves (or mountains and clear air on land): echo, timed to the wind's clock.
-    delayTime: (3 * 60) / bpm / 4,
+    delayTime: echoEvery(bpm),
     delayWet: d.waves * w.waves.n * 0.42,
     delayFeedback: 0.25 + w.waves.n * 0.35,
     // Storm energy: overdrive, a low rumble, and thunder when it breaks.
@@ -183,7 +229,7 @@ export function computePatch(w, d) {
     fog: `Attack ${Math.round(p.attack * 1000)} ms, chorus ${pct(w.fog.n)}`,
     sun: `${night > 0.3 ? 'Dark and uneasy' : sunny > 0.3 ? 'Bright' : sunny > 0.05 ? 'Hazy' : 'Neutral'}, adds a ${harmony.name}`,
     air: w.air.v == null ? 'Clean signal' : `Crush ${pct(w.air.n)}`,
-    waves: `Echo ${pct(w.waves.n)}, every ${p.delayTime.toFixed(2)}s (wind's clock)`,
+    waves: echoText(w.waves.n, p.delayTime),
     storm: w.storm.thunder ? 'Overdrive, rumble and thunder' : w.storm.n > 0.05 ? `Overdrive ${pct(w.storm.n)}` : 'Calm: no distortion',
     character: perc ? `Adds ${perc.name}` : 'Silent until it rains',
     layers: `Bass ${p.lowDb.toFixed(0)} dB, mids ${p.midDb.toFixed(0)} dB, top ${p.highDb.toFixed(0)} dB`,

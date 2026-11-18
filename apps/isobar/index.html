@@ -12,10 +12,20 @@
         <div class="title">
           <h1>Isobar</h1>
           <p id="summary">Loading the weather…</p>
+          <div id="target" class="target" role="group" aria-label="Which rows a new place applies to">
+            <span class="target-label">Place for</span>
+            <div class="seg">
+              <button type="button" data-target="all" aria-pressed="true">Everything</button>
+              <button type="button" data-target="0" aria-pressed="false"><i style="--c: var(--row0)"></i>Tone</button>
+              <button type="button" data-target="1" aria-pressed="false"><i style="--c: var(--row1)"></i>Movement</button>
+              <button type="button" data-target="2" aria-pressed="false"><i style="--c: var(--row2)"></i>Colour</button>
+            </div>
+            <button id="join" type="button" class="link" hidden></button>
+          </div>
         </div>
         <div class="place">
           <div class="search">
-            <label for="place-input">Location</label>
+            <label id="place-label" for="place-input">Location</label>
             <input id="place-input" type="search" placeholder="Search for a place" autocomplete="off" />
             <ul id="place-results" hidden></ul>
           </div>
@@ -47,6 +57,8 @@
         <div class="play-bar">
           <button id="power" type="button" class="primary">Start audio</button>
           <button id="midi" type="button">Connect MIDI keyboard</button>
+          <button id="rec-audio" type="button" title="Records what you hear, up to 10 seconds, to a WAV file">Record audio</button>
+          <span id="rec-status" class="hint" role="status"></span>
           <span id="midi-status" class="hint"></span>
           <label class="volume">Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" /></label>
           <canvas id="scope" width="160" height="36" aria-hidden="true"></canvas>

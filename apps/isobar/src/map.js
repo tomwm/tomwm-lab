@@ -102,23 +102,24 @@ function landDots() {
   return dots
 }
 
-export function createMap(el, { onPick }) {
+// pins: [{ lat, lon, colours: [css colour, ...] }]
+export function createMap(el, { onPick, pickLabel }) {
   el.innerHTML = `
     <div class="map-frame">
       <canvas></canvas>
-      <div class="map-marker" hidden></div>
+      <div class="map-pins"></div>
       <div class="map-cursor" hidden></div>
-      <div class="map-tip" hidden><strong></strong><span></span></div>
+      <div class="map-tip" hidden><strong></strong><span></span><em></em></div>
     </div>
     <p class="hint">Lit dots are in daylight right now. Point anywhere to see where it is, then click to play that place's weather.</p>`
   const frame = el.querySelector('.map-frame')
   const canvas = el.querySelector('canvas')
-  const marker = el.querySelector('.map-marker')
+  const pinLayer = el.querySelector('.map-pins')
   const cursor = el.querySelector('.map-cursor')
   const tip = el.querySelector('.map-tip')
   const g = canvas.getContext('2d')
   const dots = landDots()
-  let place = null
+  let pins = []
 
   const toXY = (lon, lat, w, h) => [((lon + 180) / 360) * w, ((LAT_TOP - lat) / (LAT_TOP - LAT_BOTTOM)) * h]
 
@@ -146,12 +147,21 @@ export function createMap(el, { onPick }) {
   }
 
   function showMarker() {
-    const visible = place && place.lat < LAT_TOP && place.lat > LAT_BOTTOM
-    marker.hidden = !visible
-    if (!visible) return
-    const [x, y] = toXY(place.lon, place.lat, frame.clientWidth, frame.clientHeight)
-    marker.style.left = `${x}px`
-    marker.style.top = `${y}px`
+    pinLayer.innerHTML = ''
+    for (const pin of pins) {
+      if (pin.lat >= LAT_TOP || pin.lat <= LAT_BOTTOM) continue
+      const [x, y] = toXY(pin.lon, pin.lat, frame.clientWidth, frame.clientHeight)
+      const el = document.createElement('div')
+      el.className = 'map-marker'
+      const c = pin.colours
+      // Rows that share a place share a pin, split into their colours
+      el.style.background = c.length === 1 ? c[0]
+        : `conic-gradient(${c.map((col, i) => `${col} ${(i / c.length) * 360}deg ${((i + 1) / c.length) * 360}deg`).join(', ')})`
+      el.style.setProperty('--glow', c[0])
+      el.style.left = `${x}px`
+      el.style.top = `${y}px`
+      pinLayer.appendChild(el)
+    }
   }
 
   function locate(e) {
@@ -169,7 +179,8 @@ export function createMap(el, { onPick }) {
     cursor.style.left = `${p.x}px`
     cursor.style.top = `${p.y}px`
     tip.firstElementChild.textContent = describe(p.lon, p.lat)
-    tip.lastElementChild.textContent = coords(p.lon, p.lat)
+    tip.children[1].textContent = coords(p.lon, p.lat)
+    tip.children[2].textContent = pickLabel?.() ?? ''
     // Keep the label on the map: flip it to the left near the right edge
     const flip = p.x > p.width - 190
     tip.style.left = `${p.x}px`
@@ -187,8 +198,8 @@ export function createMap(el, { onPick }) {
   new ResizeObserver(draw).observe(frame)
   setInterval(draw, 60000) // the daylight line moves
   return {
-    setPlace(p) {
-      place = p
+    setPins(list) {
+      pins = list
       showMarker()
     },
   }

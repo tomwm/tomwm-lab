@@ -1,9 +1,10 @@
 import { fetchWeather, sample, searchPlaces, FUTURE_HOURS } from './weather.js'
-import { MODULES, ROWS, DEFAULT_DEPTHS, computePatch } from './patch.js'
+import { MODULES, ROWS, ROW_SHORT, ROW_COLOURS, DEFAULT_DEPTHS, computePatch, mergePatches } from './patch.js'
 import { Engine } from './engine.js'
 import { buildKeyboard, bindComputerKeys, connectMidi } from './input.js'
 import { Sequencer } from './sequencer.js'
 import { createMap } from './map.js'
+import { AudioRecorder } from './recorder.js'
 
 const $ = (id) => document.getElementById(id)
 const store = {
@@ -22,22 +23,36 @@ const store = {
 }
 
 const engine = new Engine()
+const LONDON = { name: 'London, England, United Kingdom', lat: 51.51, lon: -0.13 }
+const firstPlace = store.get('place', LONDON) // from before rows could be split
 const state = {
-  place: store.get('place', { name: 'London, England, United Kingdom', lat: 51.51, lon: -0.13 }),
+  // One place per row: Tone and space, Movement and rhythm, Colour and drama
+  places: store.get('places', [firstPlace, firstPlace, firstPlace]),
+  target: 'all', // which rows the next chosen place applies to
   depths: { ...DEFAULT_DEPTHS, ...store.get('depths-v2', {}) },
-  data: null,
   offsetHours: 0,
 }
+const weather = new Map() // place key -> fetched data
+const placeKey = (p) => `${p.lat.toFixed(3)},${p.lon.toFixed(3)}`
+const shortName = (p) => p.name.split(/[,(]/)[0].trim().replace(/^Near /, '')
+const isSplit = () => new Set(state.places.map(placeKey)).size > 1
+for (const [i, c] of ROW_COLOURS.entries()) document.documentElement.style.setProperty(`--row${i}`, c)
 
 // ---- Module cards -------------------------------------------------------
 
 const cards = {}
-const rows = ROWS.map((name) => {
+const rows = ROWS.map((name, i) => {
   const row = document.createElement('div')
   row.className = 'module-row'
   row.setAttribute('role', 'group')
   row.setAttribute('aria-label', name)
-  row.innerHTML = `<h2 class="row-name">${name}</h2><div class="row-cards"></div>`
+  row.innerHTML = `
+    <div class="row-head" style="--c: var(--row${i})">
+      <h2 class="row-name">${name}</h2>
+      <button type="button" class="row-place" title="Choose a place for this row"></button>
+    </div>
+    <div class="row-cards"></div>`
+  row.querySelector('.row-place').addEventListener('click', () => setTarget(state.target === i ? 'all' : i))
   $('modules').appendChild(row)
   return row.lastElementChild
 })
@@ -93,18 +108,26 @@ for (const panel of document.querySelectorAll('details.panel')) {
 
 // ---- Weather -> patch -> engine -----------------------------------------
 
-function localTime(t, withDay) {
-  const d = new Date((t + state.data.utcOffset) * 1000)
+function localTime(t, data, withDay) {
+  const d = new Date((t + data.utcOffset) * 1000)
   const opts = { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }
   if (withDay) Object.assign(opts, { weekday: 'short', day: 'numeric', month: 'short' })
   return d.toLocaleString('en-GB', opts)
 }
 
 function refresh() {
-  if (!state.data) return
+  const loaded = state.places.map((p) => weather.get(placeKey(p)))
+  const fallback = loaded.find(Boolean)
+  if (!fallback) return
+  const datas = loaded.map((d) => d ?? fallback)
   const t = Date.now() / 1000 + state.offsetHours * 3600
-  const w = sample(state.data, t)
-  const patch = computePatch(w, state.depths)
+  // One patch per distinct place, then each row takes its own modules' settings
+  const byData = new Map()
+  const patchFor = (d) => {
+    if (!byData.has(d)) byData.set(d, computePatch(sample(d, t), state.depths))
+    return byData.get(d)
+  }
+  const patch = mergePatches(datas.map(patchFor))
   engine.apply(patch)
   for (const m of MODULES) {
     const c = cards[m.id]
@@ -113,40 +136,94 @@ function refresh() {
     c.fill.style.width = `${Math.round(patch.values[m.id] * 100)}%`
     c.meter.setAttribute('aria-label', `${m.label} is at ${Math.round(patch.values[m.id] * 100)}% of its range`)
   }
-  const when = state.offsetHours === 0 ? `now, ${localTime(t)} local time` : localTime(t, true)
-  $('summary').textContent = `${state.place.name} · ${when}`
+  const tempo = datas[1] // the Movement row sets the tempo, so its clock leads
+  if (!isSplit()) {
+    const when = state.offsetHours === 0 ? `now, ${localTime(t, tempo)} local time` : localTime(t, tempo, true)
+    $('summary').textContent = `${state.places[0].name} · ${when}`
+  } else {
+    $('summary').textContent = ROW_SHORT.map((r, i) => `${r} in ${shortName(state.places[i])} ${localTime(t, datas[i])}`).join(' · ')
+  }
   $('scrub-label').textContent = state.offsetHours === 0 ? 'Now'
-    : `${localTime(t, true)} (${state.offsetHours > 0 ? 'forecast' : 'past'})`
-  window.__synth = { engine, patch, weather: w } // handy in the console
+    : `${localTime(t, tempo, true)}${isSplit() ? ` in ${shortName(state.places[1])}` : ''} (${state.offsetHours > 0 ? 'forecast' : 'past'})`
+  window.__synth = { engine, patch, weather: datas.map((d) => sample(d, t)) } // handy in the console
 }
 
 async function load() {
-  $('status').textContent = `Fetching the weather for ${state.place.name}…`
-  try {
-    state.data = await fetchWeather(state.place)
-    $('status').textContent = ''
-    refresh()
-  } catch (err) {
-    $('status').textContent = `Couldn't load the weather (${err.message}). ${state.data ? 'Still using the last reading.' : 'Check your connection and reload.'}`
-  }
+  const missing = [...new Map(state.places.map((p) => [placeKey(p), p])).values()]
+  $('status').textContent = `Fetching the weather for ${missing.map(shortName).join(', ')}…`
+  const results = await Promise.allSettled(missing.map(async (p) => weather.set(placeKey(p), await fetchWeather(p))))
+  const failed = results.filter((r) => r.status === 'rejected')
+  $('status').textContent = failed.length
+    ? `Couldn't load the weather (${failed[0].reason.message}). ${weather.size ? 'Using the last reading where there is one.' : 'Check your connection and reload.'}`
+    : ''
+  refresh()
 }
 
 setInterval(refresh, 5000) // the weather drifts continuously between hourly readings
-setInterval(load, 30 * 60 * 1000)
+setInterval(() => {
+  weather.clear()
+  load()
+}, 30 * 60 * 1000)
 
 // ---- Location picker ----------------------------------------------------
+// A chosen place goes to every row, or only the targeted one.
 
 function setPlace(place) {
-  state.place = place
-  map.setPlace(place)
-  store.set('place', place)
+  if (state.target === 'all') state.places = [place, place, place]
+  else state.places = state.places.map((p, i) => (i === state.target ? place : p))
+  store.set('places', state.places)
   $('place-input').value = ''
   $('place-results').hidden = true
-  load()
+  showPlaces()
+  if (weather.has(placeKey(place))) refresh()
+  else load()
 }
 
-const map = createMap($('map'), { onPick: setPlace })
-map.setPlace(state.place)
+function setTarget(target) {
+  state.target = target
+  for (const b of document.querySelectorAll('#target button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.target === String(target)))
+  }
+  showPlaces()
+}
+for (const b of document.querySelectorAll('#target button')) {
+  b.addEventListener('click', () => setTarget(b.dataset.target === 'all' ? 'all' : Number(b.dataset.target)))
+}
+
+function pickLabel() {
+  return state.target === 'all' ? 'Click to use for everything' : `Click to set ${ROWS[state.target]}`
+}
+
+// Row chips, map pins, the search label and the "join" button
+function showPlaces() {
+  const split = isSplit()
+  document.querySelectorAll('.module-row').forEach((row, i) => {
+    const chip = row.querySelector('.row-place')
+    chip.textContent = shortName(state.places[i])
+    chip.classList.toggle('targeted', state.target === i)
+    chip.setAttribute('aria-pressed', String(state.target === i))
+    row.classList.toggle('split', split)
+  })
+  const groups = new Map()
+  state.places.forEach((p, i) => {
+    const key = placeKey(p)
+    if (!groups.has(key)) groups.set(key, { lat: p.lat, lon: p.lon, colours: [] })
+    groups.get(key).colours.push(ROW_COLOURS[i])
+  })
+  map.setPins(split ? [...groups.values()] : [{ ...state.places[0], colours: ['var(--accent)'] }])
+  $('place-label').textContent = state.target === 'all' ? 'Location' : `Location for ${ROWS[state.target]}`
+  const join = $('join')
+  join.hidden = !split
+  const from = state.target === 'all' ? 1 : state.target
+  join.textContent = `Use ${shortName(state.places[from])} for everything`
+  join.onclick = () => {
+    const place = state.places[from]
+    setTarget('all')
+    setPlace(place)
+  }
+}
+
+const map = createMap($('map'), { onPick: setPlace, pickLabel })
 
 function setView(view) {
   const isMap = view === 'map'
@@ -297,6 +374,105 @@ $('seq-rate').addEventListener('change', (e) => {
   seq.rate = Number(e.target.value)
   renderSeq()
 })
+
+// ---- Audio recording ----------------------------------------------------
+// Records whatever you hear (free play, the sequence, or both) to a WAV file.
+// The clock starts at the first sound and stops at MAX_SECONDS.
+
+const MAX_SECONDS = 10
+const ARM_TIMEOUT = 60 // seconds to wait for a first note before giving up
+const rec = { busy: false, stopRequested: false, recorder: null }
+const recBtn = $('rec-audio')
+const recStatus = (text) => ($('rec-status').textContent = text)
+
+function fileName() {
+  const place = [...new Set(state.places.map(shortName))].join(' ').toLowerCase()
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'somewhere'
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `isobar-${place}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.wav`
+}
+
+function save(blob, name) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+
+async function recordAudio() {
+  if (rec.busy) {
+    rec.stopRequested = true
+    return
+  }
+  rec.busy = true
+  rec.stopRequested = false
+  recBtn.textContent = 'Stop'
+  recBtn.classList.add('recording')
+  try {
+    await power()
+    rec.recorder ??= new AudioRecorder(engine.ctx, engine.analyser)
+    const r = rec.recorder
+    await r.start()
+
+    // Armed: wait for the first sound
+    const armedAt = performance.now()
+    recStatus('Ready: recording starts when you play')
+    while (r.heardSeconds == null && !rec.stopRequested) {
+      if (performance.now() - armedAt > ARM_TIMEOUT * 1000) {
+        rec.stopRequested = true
+        break
+      }
+      await wait(50)
+    }
+    if (r.heardSeconds == null) {
+      await r.stop()
+      recStatus('Nothing was played, so nothing was saved.')
+      return
+    }
+
+    // Recording until Stop or the limit
+    while (!rec.stopRequested && r.heardSeconds < MAX_SECONDS) {
+      recStatus(`Recording ${r.heardSeconds.toFixed(1)} of ${MAX_SECONDS} s`)
+      await wait(50)
+    }
+
+    // Stopped early: let the reverb and echo ring out, still within the limit
+    if (r.heardSeconds < MAX_SECONDS) {
+      let quietSince = null
+      while (r.heardSeconds < MAX_SECONDS) {
+        recStatus(`Letting the echo ring out… ${r.heardSeconds.toFixed(1)} s`)
+        if (engine.level() < 0.002) {
+          quietSince ??= performance.now()
+          if (performance.now() - quietSince > 400) break
+        } else quietSince = null
+        await wait(50)
+      }
+    }
+
+    const blob = await r.stop(MAX_SECONDS)
+    const name = fileName()
+    save(blob, name)
+    recStatus(`Saved ${name} (${(blob.size / 4 / engine.ctx.sampleRate).toFixed(1)} s) to your downloads.`)
+    rec.lastBlob = blob // handy for testing
+  } catch (err) {
+    recStatus(`Couldn't record audio: ${err.message}`)
+  } finally {
+    rec.busy = false
+    recBtn.textContent = 'Record audio'
+    recBtn.classList.remove('recording')
+  }
+}
+
+recBtn.addEventListener('click', recordAudio)
+window.__rec = rec
+
 renderSeq()
 
 const keyboard = buildKeyboard($('keyboard'), { on, off })
@@ -370,4 +546,5 @@ function draw() {
 }
 draw()
 
+showPlaces()
 load()
