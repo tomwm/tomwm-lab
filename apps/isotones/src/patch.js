@@ -65,7 +65,7 @@ export function mergePatches([p0, p1, p2]) {
   const out = { readings: {}, effects: {}, values: {} }
   for (const key of Object.keys(p0)) {
     if (key in out) continue
-    if (!(key in ROW_OF)) console.warn(`Isobar: no row owns the setting "${key}"`)
+    if (!(key in ROW_OF)) console.warn(`Isotones: no row owns the setting "${key}"`)
     out[key] = rows[ROW_OF[key] ?? 0][key]
   }
   for (const m of MODULES) {

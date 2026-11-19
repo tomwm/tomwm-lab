@@ -5,19 +5,29 @@ import { buildKeyboard, bindComputerKeys, connectMidi } from './input.js'
 import { Sequencer } from './sequencer.js'
 import { createMap } from './map.js'
 import { AudioRecorder } from './recorder.js'
+import { Link } from './link.js'
 
 const $ = (id) => document.getElementById(id)
+// Settings saved under the old name (Isobar) move across once.
+try {
+  if (!Object.keys(localStorage).some((k) => k.startsWith('isotones:'))) {
+    for (const k of Object.keys(localStorage)) {
+      if (k.startsWith('isobar:')) localStorage.setItem(k.replace('isobar:', 'isotones:'), localStorage.getItem(k))
+    }
+  }
+} catch {}
+
 const store = {
   get(key, fallback) {
     try {
-      return JSON.parse(localStorage.getItem(`isobar:${key}`)) ?? fallback
+      return JSON.parse(localStorage.getItem(`isotones:${key}`)) ?? fallback
     } catch {
       return fallback
     }
   },
   set(key, value) {
     try {
-      localStorage.setItem(`isobar:${key}`, JSON.stringify(value))
+      localStorage.setItem(`isotones:${key}`, JSON.stringify(value))
     } catch {}
   },
 }
@@ -127,7 +137,7 @@ function refresh() {
     if (!byData.has(d)) byData.set(d, computePatch(sample(d, t), state.depths))
     return byData.get(d)
   }
-  const patch = mergePatches(datas.map(patchFor))
+  const patch = withLink(mergePatches(datas.map(patchFor)))
   engine.apply(patch)
   for (const m of MODULES) {
     const c = cards[m.id]
@@ -358,14 +368,14 @@ function renderSeq() {
 
 const seq = new Sequencer(engine, renderSeq)
 Object.assign(seq, store.get('seq', {}))
-engine.onStep = (t) => seq.clock(t)
+engine.onStep = (t, i) => seq.clock(t, i)
 $('seq-max').value = seq.max
 $('seq-rate').value = seq.rate
 $('seq-record').addEventListener('click', () => (seq.recording ? seq.finishRecording() : seq.record()))
 $('seq-play').addEventListener('click', async () => {
   if (seq.playing) return seq.stop()
   await power()
-  seq.play()
+  seq.play(!!(link.enabled && engine.follow?.running)) // linked: start on the next bar line
 })
 $('seq-rest').addEventListener('click', () => seq.rest())
 $('seq-clear').addEventListener('click', () => seq.clear())
@@ -390,7 +400,7 @@ function fileName() {
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'somewhere'
   const d = new Date()
   const pad = (n) => String(n).padStart(2, '0')
-  return `isobar-${place}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.wav`
+  return `isotones-${place}-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.wav`
 }
 
 function save(blob, name) {
@@ -545,6 +555,73 @@ function draw() {
   g.stroke()
 }
 draw()
+
+// ---- Link timing with Isobeats ----------------------------------------------
+// With Link on, an Isobeats window in this browser sets the tempo, swing and
+// bar lines. Isotones keeps its own sound; its sequence starts with Isobeats.
+
+const link = new Link('isotones', {
+  onMessage(msg) {
+    if (msg.app !== 'isobeats' || !msg.clock) return
+    const before = engine.follow
+    engine.follow = msg.clock
+    if (!before || before.bpm !== msg.clock.bpm || before.swing !== msg.clock.swing) refresh()
+    if (msg.type === 'run') {
+      if (msg.clock.running && seq.steps.length && !seq.recording) seq.play(true)
+      else if (!msg.clock.running && seq.playing) seq.stop()
+    }
+    showLink()
+  },
+  onPeers() {
+    if (!link.peerCount('isobeats') && engine.follow) {
+      engine.follow = null
+      refresh()
+    }
+    showLink()
+  },
+})
+
+// Swap in Isobeats' tempo and swing while following it
+function withLink(patch) {
+  const f = link.enabled ? engine.follow : null
+  if (!f) return patch
+  const delayTime = (3 * 60) / f.bpm / 4
+  return {
+    ...patch,
+    bpm: f.bpm,
+    swing: f.swing,
+    delayTime,
+    effects: {
+      ...patch.effects,
+      wind: `${f.bpm} bpm from Isobeats${patch.arpLevel > 0.01 ? ', arpeggio on' : ''}`,
+      waves: patch.effects.waves.replace(/every [\d.]+s/, `every ${delayTime.toFixed(2)}s`),
+    },
+  }
+}
+
+function showLink() {
+  const on = link.enabled
+  const f = engine.follow
+  $('link').textContent = on ? 'Linked' : 'Link timing'
+  $('link').setAttribute('aria-pressed', String(on))
+  $('link').classList.toggle('on', on)
+  $('link-status').textContent = !on ? ''
+    : !link.peerCount('isobeats') || !f ? 'Waiting for an Isobeats window in this browser'
+    : f.running ? `Following Isobeats · ${f.bpm} bpm`
+    : `Linked to Isobeats · ${f.bpm} bpm · your sequence starts when Isobeats runs`
+}
+
+function setLinked(on) {
+  link.setEnabled(on)
+  store.set('link', on)
+  if (!on && engine.follow) {
+    engine.follow = null
+    refresh()
+  }
+  showLink()
+}
+$('link').addEventListener('click', () => setLinked(!link.enabled))
+setLinked(store.get('link', false))
 
 showPlaces()
 load()

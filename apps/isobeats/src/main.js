@@ -1,7 +1,8 @@
-import { fetchWeather, sample, searchPlaces, FUTURE_HOURS } from '../../isobar/src/weather.js'
-import { createMap } from '../../isobar/src/map.js'
-import { AudioRecorder } from '../../isobar/src/recorder.js'
-import { connectMidi } from '../../isobar/src/input.js'
+import { fetchWeather, sample, searchPlaces, FUTURE_HOURS } from '../../isotones/src/weather.js'
+import { createMap } from '../../isotones/src/map.js'
+import { AudioRecorder } from '../../isotones/src/recorder.js'
+import { connectMidi } from '../../isotones/src/input.js'
+import { Link } from '../../isotones/src/link.js'
 import { MODULES, ROWS, ROW_SHORT, ROW_COLOURS, DEFAULT_DEPTHS, computePatch, mergePatches } from './patch.js'
 import { BeatEngine, DEFAULT_VOICE } from './engine.js'
 import { createKnob } from './knob.js'
@@ -640,7 +641,39 @@ function draw() {
 }
 draw()
 
-window.__beats = { engine, pattern }
+// ---- Link timing with Isotones ----------------------------------------------
+// With Link on, an Isotones window in this browser follows this one's tempo,
+// swing and bar lines, and starts its sequence when this one runs.
+
+const link = new Link('isobeats', {
+  onPeers: () => showLink(),
+})
+link.extra = () => ({ clock: engine.clockState() })
+engine.onClock = (type) => {
+  if (link.enabled) link.send({ type, clock: engine.clockState() })
+  showLink()
+}
+
+function showLink() {
+  const on = link.enabled
+  const n = link.peerCount('isotones')
+  $('link').textContent = on ? 'Linked' : 'Link timing'
+  $('link').setAttribute('aria-pressed', String(on))
+  $('link').classList.toggle('on', on)
+  $('link-status').textContent = !on ? ''
+    : !n ? 'Waiting for an Isotones window in this browser'
+    : `Leading ${n > 1 ? n + ' Isotones windows' : 'Isotones'}`
+}
+
+function setLinked(on) {
+  link.setEnabled(on)
+  store.set('link', on)
+  showLink()
+}
+$('link').addEventListener('click', () => setLinked(!link.enabled))
+setLinked(store.get('link', false))
+
+window.__beats = { engine, pattern, link }
 showPattern()
 showPlaces()
 load()

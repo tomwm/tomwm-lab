@@ -3,7 +3,7 @@
 
 // Runs on the audio thread: collects blocks and sends them over in batches.
 const WORKLET = `
-class IsobarTap extends AudioWorkletProcessor {
+class IsoTap extends AudioWorkletProcessor {
   constructor() {
     super()
     this.size = 8192
@@ -39,7 +39,7 @@ class IsobarTap extends AudioWorkletProcessor {
     return this.running
   }
 }
-registerProcessor('isobar-tap', IsobarTap)
+registerProcessor('iso-tap', IsoTap)
 `
 
 let moduleUrl = null
@@ -66,7 +66,7 @@ export class AudioRecorder {
     this.chunks = []
     this.frames = 0
     this.firstSound = null // frame of the first audible sample
-    this.node = new AudioWorkletNode(this.ctx, 'isobar-tap', {
+    this.node = new AudioWorkletNode(this.ctx, 'iso-tap', {
       numberOfInputs: 1,
       numberOfOutputs: 1,
       outputChannelCount: [1],

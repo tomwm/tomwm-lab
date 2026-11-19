@@ -2,6 +2,9 @@
 // supplies everything else, including the generative layers that only run
 // while notes are held: arpeggio (wind), droplets (rain) and drone (calm).
 
+import { startTicker } from './ticker.js'
+import { wallToCtx } from './link.js'
+
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12)
 const SMOOTH = 0.15 // seconds; how quickly settings glide to new values
 
@@ -36,6 +39,9 @@ export class Engine {
     this.events = { arp: 0, rain: 0, gust: 0, thunder: 0 } // last time each layer fired
     this.onNotes = null
     this.onStep = null
+    // When linked to Isobeats: its grid { bpm, swing, anchorWall, anchorStep, running, runId }
+    this.follow = null
+    this.linkStep = null
   }
 
   get running() {
@@ -228,7 +234,7 @@ export class Engine {
     this.step = 0
     this.arpIdx = 0
     this.nextStep = ctx.currentTime + 0.1
-    setInterval(() => this._clock(), 25)
+    startTicker(() => this._clock())
     setInterval(() => this._wander(), 250)
     if (this.patch) this.apply(this.patch)
   }
@@ -405,6 +411,27 @@ export class Engine {
   _clock() {
     const ctx = this.ctx, p = this.patch
     if (!p || ctx.state !== 'running') return
+    const f = this.follow
+    if (f?.running) {
+      // Locked to Isobeats: step k sounds exactly when Isobeats' step k does
+      const dur = 60 / f.bpm / 4
+      const zero = wallToCtx(ctx, f.anchorWall) - f.anchorStep * dur // when step 0 was
+      const timeOf = (k) => zero + k * dur + (k % 2 ? f.swing * dur : 0)
+      const lost = this.linkStep == null || this.linkRun !== f.runId
+        || timeOf(this.linkStep) < ctx.currentTime || timeOf(this.linkStep) > ctx.currentTime + 1
+      if (lost) {
+        this.linkStep = Math.max(0, Math.ceil((ctx.currentTime + 0.01 - zero) / dur))
+        this.linkRun = f.runId
+      }
+      while (timeOf(this.linkStep) < ctx.currentTime + 0.12) {
+        this._step(this.linkStep, timeOf(this.linkStep), dur)
+        this.linkStep++
+      }
+      this.step = this.linkStep
+      this.nextStep = timeOf(this.linkStep) // so it carries on smoothly if the link drops
+      return
+    }
+    this.linkStep = null
     if (this.nextStep < ctx.currentTime) this.nextStep = ctx.currentTime + 0.02
     while (this.nextStep < ctx.currentTime + 0.12) {
       const dur = 60 / p.bpm / 4
@@ -416,7 +443,7 @@ export class Engine {
 
   _step(i, t, dur) {
     const p = this.patch
-    this.onStep?.(t) // the sequencer starts and stops its notes here
+    this.onStep?.(t, i) // the sequencer starts and stops its notes here
     const notes = this.activeNotes()
     if (Math.random() < p.gustRate * dur) this._gust(t, notes.length > 0)
     if (!notes.length) return

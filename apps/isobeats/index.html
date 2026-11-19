@@ -59,6 +59,8 @@
           <button id="midi" type="button">Connect MIDI</button>
           <button id="rec-audio" type="button" title="Records what you hear, up to 10 seconds, to a WAV file">Record audio</button>
           <span id="rec-status" class="hint" role="status"></span>
+          <button id="link" type="button" aria-pressed="false" title="Keep an Isotones window in this browser in time with this one">Link timing</button>
+          <span id="link-status" class="hint" role="status"></span>
           <span id="midi-status" class="hint"></span>
           <label class="volume">Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" /></label>
           <canvas id="scope" width="160" height="36" aria-hidden="true"></canvas>
@@ -123,7 +125,7 @@
         </div>
       </details>
 
-      <footer>Weather and air quality data from <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a>. Sister to <a href="/isobar">Isobar</a>.</footer>
+      <footer>Weather and air quality data from <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a>. Sister to <a href="/isotones">Isotones</a>.</footer>
     </main>
     <script type="module" src="/src/main.js"></script>
   </body>

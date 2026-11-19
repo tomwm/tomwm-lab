@@ -8,6 +8,7 @@ const run = (cmd, cwd) => execSync(cmd, { stdio: 'inherit', cwd: cwd || __dirnam
 
 // Remove stale build outputs that are no longer built here
 rmSync(join(__dirname, 'dist', 'morgan-map'), { recursive: true, force: true })
+rmSync(join(__dirname, 'dist', 'isobar'), { recursive: true, force: true }) // renamed to isotones
 
 // Add new apps here
 const apps = [
@@ -15,7 +16,7 @@ const apps = [
   'uk-gov-network-graph',
   'smile',
   'history-timeline',
-  'isobar',
+  'isotones',
   'isobeats',
 ]
 

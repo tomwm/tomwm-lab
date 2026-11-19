@@ -4,6 +4,9 @@
 // (grace notes, rolls, fills, hats, thunder), which only run while it plays.
 // A step at velocity 0 is always silent: the weather only adds to played steps.
 
+import { startTicker } from '../../isotones/src/ticker.js'
+import { ctxToWall } from '../../isotones/src/link.js'
+
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12)
 const SMOOTH = 0.15
 // Each oscillator has its own tuning (a MIDI note). The step pitch is added to
@@ -37,6 +40,10 @@ export class BeatEngine {
     this.bpm = 110 // tempo only changes at the start of a bar
     this.events = { grace: 0, roll: 0, fill: 0, hats: 0, thunder: 0, accent: 0 }
     this.onStep = null // (index) when a step sounds
+    // The grid an Isotones window can follow: tempo, swing, and where step 0 fell
+    this.runId = 0
+    this.anchor = null
+    this.onClock = null // called when the grid changes
   }
 
   get started() {
@@ -151,7 +158,7 @@ export class BeatEngine {
 
     this.nextStep = ctx.currentTime + 0.1
     this.tick = 0
-    setInterval(() => this._clock(), 25)
+    startTicker(() => this._clock())
     if (this.patch) this.apply(this.patch)
   }
 
@@ -196,8 +203,32 @@ export class BeatEngine {
     this.running = on
     if (on) {
       this.tick = 0
+      this.runId++
+      this.anchor = null
       this.bpm = this.patch?.bpm ?? 110
-      this.nextStep = this.ctx.currentTime + 0.05
+      // Start a little ahead so a linked window has time to hear about it
+      this.nextStep = this.ctx.currentTime + 0.15
+      this._pin(this.nextStep)
+    } else {
+      this.onClock?.('run')
+    }
+  }
+
+  // Fix the grid: step `tick` falls at audio time t, at the current tempo.
+  _pin(t) {
+    this.anchor = { anchorWall: ctxToWall(this.ctx, t), anchorStep: this.tick, bpm: this.bpm }
+    this.onClock?.(this.tick === 0 ? 'run' : 'clock')
+  }
+
+  // What a following window needs to keep time with this one
+  clockState() {
+    return {
+      running: this.running,
+      bpm: this.running ? this.bpm : this.patch?.bpm ?? this.bpm,
+      swing: this.patch?.swing ?? 0,
+      runId: this.runId,
+      anchorWall: this.anchor?.anchorWall ?? 0,
+      anchorStep: this.anchor?.anchorStep ?? 0,
     }
   }
 
@@ -239,7 +270,10 @@ export class BeatEngine {
     if (!p || !this.running || ctx.state !== 'running') return
     if (this.nextStep < ctx.currentTime) this.nextStep = ctx.currentTime + 0.02
     while (this.nextStep < ctx.currentTime + 0.12) {
-      if (this.pos === 0) this.bpm = p.bpm // new tempo lands on the downbeat
+      if (this.pos === 0 && this.bpm !== p.bpm) {
+        this.bpm = p.bpm // new tempo lands on the downbeat
+        this._pin(this.nextStep)
+      }
       const dur = 60 / this.bpm / 4
       const swingDelay = this.tick % 2 === 1 ? p.swing * dur : 0
       this._step(this.pos, this.nextStep + swingDelay, dur)

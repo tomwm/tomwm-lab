@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 
-// Weather, map and recording code is shared with Isobar (../isobar/src).
+// Weather, map and recording code is shared with Isotones (../isotones/src).
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/isobeats/' : '/',
   build: {

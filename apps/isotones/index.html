@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Isobar</title>
+    <title>Isotones</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <main>
       <header>
         <div class="title">
-          <h1>Isobar</h1>
+          <h1>Isotones</h1>
           <p id="summary">Loading the weather…</p>
           <div id="target" class="target" role="group" aria-label="Which rows a new place applies to">
             <span class="target-label">Place for</span>
@@ -59,6 +59,8 @@
           <button id="midi" type="button">Connect MIDI keyboard</button>
           <button id="rec-audio" type="button" title="Records what you hear, up to 10 seconds, to a WAV file">Record audio</button>
           <span id="rec-status" class="hint" role="status"></span>
+          <button id="link" type="button" aria-pressed="false" title="Keep time with an Isobeats window open in this browser">Link timing</button>
+          <span id="link-status" class="hint" role="status"></span>
           <span id="midi-status" class="hint"></span>
           <label class="volume">Volume <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" /></label>
           <canvas id="scope" width="160" height="36" aria-hidden="true"></canvas>

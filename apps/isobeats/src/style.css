@@ -130,7 +130,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; min-width: 0; }
 
 .play { margin-top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 2px; }
 .play-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-#rec-status:empty { display: none; }
+#rec-status:empty, #link-status:empty { display: none; }
 .volume { display: flex; gap: 8px; align-items: center; margin-left: auto; color: var(--muted); font-size: 13px; }
 .volume input { width: 110px; }
 #scope { color: var(--accent); background: var(--bg); border-radius: 6px; }

@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/isobar/' : '/',
+  base: command === 'build' ? '/isotones/' : '/',
   build: {
-    outDir: '../../dist/isobar',
+    outDir: '../../dist/isotones',
     emptyOutDir: true,
   },
   server: {

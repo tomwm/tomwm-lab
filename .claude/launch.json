@@ -38,9 +38,9 @@
       "port": 5181
     },
     {
-      "name": "isobar",
+      "name": "isotones",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:isobar"],
+      "runtimeArgs": ["run", "dev:isotones"],
       "port": 5182
     },
     {
@@ -48,6 +48,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:isobeats"],
       "port": 5183
+    },
+    {
+      "name": "lab-dist",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "5190", "--directory", "dist"],
+      "port": 5190
     }
   ]
 }

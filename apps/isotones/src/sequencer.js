@@ -15,6 +15,7 @@ export class Sequencer {
     this.pos = -1
     this.tick = 0
     this.sounding = []
+    this.waitForBar = false // linked: hold the first step until the next bar line
   }
 
   record() {
@@ -70,9 +71,10 @@ export class Sequencer {
     this.onChange()
   }
 
-  play() {
+  play(alignToBar = false) {
     if (this.recording) this.finishRecording()
     if (!this.steps.length) return
+    this.waitForBar = alignToBar
     this.playing = true
     this.tick = 0
     this.pos = -1
@@ -93,8 +95,13 @@ export class Sequencer {
   }
 
   // Called by the engine on every clock step, with the exact audio time.
-  clock(t) {
+  // t: audio time of this clock step; i: its step number (16 to a bar)
+  clock(t, i = 0) {
     if (!this.playing) return
+    if (this.waitForBar) {
+      if (i % 16 !== 0) return
+      this.waitForBar = false
+    }
     const phase = this.tick++ % this.rate
     if (phase === 0) {
       this._release(t)
