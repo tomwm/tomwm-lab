@@ -1,11 +1,14 @@
 // Web Audio engine: one percussion voice built from two oscillators and noise,
 // played by a step sequencer. The player sets each step's pitch and velocity;
 // the weather patch sets the voice, the tempo and the generative layers
-// (ghost notes, rolls, fills, hats, thunder), which only run while it plays.
+// (grace notes, rolls, fills, hats, thunder), which only run while it plays.
+// A step at velocity 0 is always silent: the weather only adds to played steps.
 
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12)
 const SMOOTH = 0.15
-export const BASE_NOTE = 36 // C2: a step at pitch 0, with no transpose
+// Each oscillator has its own tuning (a MIDI note). The step pitch is added to
+// the oscillators the sequence moves: both, oscillator 2 only, or neither.
+export const DEFAULT_VOICE = { tune1: 36, tune2: 43, seqTo: 'both' } // C2 and G2
 
 function impulse(ctx, seconds, decay) {
   const len = Math.floor(ctx.sampleRate * seconds)
@@ -25,14 +28,14 @@ function crushCurve(steps) {
 
 export class BeatEngine {
   constructor(pattern) {
-    this.pattern = pattern // { steps: [{ pitch, vel }], length, transpose }
+    this.pattern = pattern // { steps: [{ pitch, vel }], length, transpose, voice }
     this.ctx = null
     this.patch = null
     this.volume = 0.7
     this.running = false
     this.pos = 0 // the step that plays next
     this.bpm = 110 // tempo only changes at the start of a bar
-    this.events = { ghost: 0, roll: 0, fill: 0, hats: 0, thunder: 0, accent: 0 }
+    this.events = { grace: 0, roll: 0, fill: 0, hats: 0, thunder: 0, accent: 0 }
     this.onStep = null // (index) when a step sounds
   }
 
@@ -134,9 +137,10 @@ export class BeatEngine {
     preDrive.connect(this.driveDry).connect(this.tone)
     preDrive.connect(gain(5)).connect(driveShaper).connect(this.driveWet).connect(this.tone)
 
-    // Hats and thunder skip the voice filter but share the space
+    // Hats skip the voice's tone shaping (night tilt, cloud-layer cuts), which
+    // would bury them, but share its space. Thunder goes through the tone.
     this.hatBus = gain(0)
-    this.hatBus.connect(this.tone)
+    this.hatBus.connect(this.post)
     this.thunderBus = gain(0)
     this.thunderBus.connect(this.tone)
 
@@ -214,13 +218,19 @@ export class BeatEngine {
     if (!this.ctx || !this.patch) return
     const i = this.pos
     const step = this.pattern.steps[i]
-    this._hit(this.ctx.currentTime + 0.005, this._note(step), Math.max(step.vel, 0.6), { dur: 60 / this.bpm / 4 })
+    this._hit(this.ctx.currentTime + 0.005, this._notes(step), Math.max(step.vel, 0.6), { dur: 60 / this.bpm / 4 })
     this.onStep?.(i)
     this.pos = (i + 1) % this.pattern.length
   }
 
-  _note(step) {
-    return BASE_NOTE + this.pattern.transpose + step.pitch
+  // [oscillator 1 note, oscillator 2 note] for a step
+  _notes(step, shift = 0) {
+    const { voice, transpose } = this.pattern
+    const seq = step.pitch + shift
+    return [
+      voice.tune1 + transpose + (voice.seqTo === 'both' ? seq : 0),
+      voice.tune2 + transpose + (voice.seqTo !== 'off' ? seq : 0),
+    ]
   }
 
   // Look-ahead scheduler: each step is a 16th note.
@@ -245,13 +255,23 @@ export class BeatEngine {
     const now = performance.now()
     const ms = Math.max(0, (t - this.ctx.currentTime) * 1000)
     setTimeout(() => this.onStep?.(i), ms) // keep the step light in time with the sound
-    const note = this._note(step)
+    const notes = this._notes(step)
+    // The weather only decorates a pattern you have played into: with every
+    // step at velocity 0 the sequencer is silent, hats and thunder too.
+    const played = this.pattern.steps.slice(0, this.pattern.length).filter((s) => s.vel > 0)
+    if (!played.length) return
     const lastOfPhrase = i === this.pattern.length - 1 && Math.floor(this.tick / this.pattern.length) % 2 === 1
 
     if (step.vel > 0) {
       const quiet = step.vel < 0.5
       if (!quiet || Math.random() < p.quietProb) {
         let vel = step.vel
+        if (p.graceLevel > 0.01 && p.grace[i % 8]) {
+          // Cloud grace note: a soft hit a 32nd before the step, on the step's own pitch
+          const at = Math.max(this.ctx.currentTime + 0.002, t - dur / 2)
+          this._hit(at, notes, p.graceLevel * (0.6 + Math.random() * 0.4), { dur: dur / 2, grace: true })
+          this.events.grace = now
+        }
         const accent = Math.random() < p.accentProb
         if (accent) {
           vel = Math.min(1.25, vel * 1.4)
@@ -259,20 +279,16 @@ export class BeatEngine {
         }
         if (lastOfPhrase && Math.random() < p.fillProb) {
           // Storm fill: a four-hit roll that climbs
-          for (let k = 0; k < 4; k++) this._hit(t + (k * dur) / 4, note + k * 2, vel * (0.55 + k * 0.15), { dur: dur / 4, accent })
+          for (let k = 0; k < 4; k++) this._hit(t + (k * dur) / 4, this._notes(step, k * 2), vel * (0.55 + k * 0.15), { dur: dur / 4, accent })
           this.events.fill = now
         } else if (Math.random() < p.ratchetProb) {
           const n = Math.random() < 0.7 ? 2 : 3
-          for (let k = 0; k < n; k++) this._hit(t + (k * dur) / n, note, vel * (k ? 0.7 : 1), { dur: dur / n, accent })
+          for (let k = 0; k < n; k++) this._hit(t + (k * dur) / n, notes, vel * (k ? 0.7 : 1), { dur: dur / n, accent })
           this.events.roll = now
         } else {
-          this._hit(t, note, vel, { dur, accent })
+          this._hit(t, notes, vel, { dur, accent })
         }
       }
-    } else if (p.ghostLevel > 0.01 && p.ghost[i % 8]) {
-      // Cloud ghost notes fill the rests, very quietly
-      this._hit(t, note, p.ghostLevel * (0.6 + Math.random() * 0.4), { dur, ghost: true })
-      this.events.ghost = now
     }
 
     if (p.hats && p.hatLevel > 0.01) this._hats(p.hats, this.tick, t, dur)
@@ -283,26 +299,28 @@ export class BeatEngine {
 
   // One percussion hit: two oscillators (1 frequency-modulates 2), a pitch
   // drop on both, noise, a decaying filter and a decaying amplifier.
-  _hit(t, midi, vel, { dur = 0.15, accent = false, ghost = false } = {}) {
+  _hit(t, [n1, n2], vel, { dur = 0.15, accent = false, grace = false } = {}) {
     const ctx = this.ctx, p = this.patch
-    const f = mtof(midi)
+    const f1 = mtof(n1)
+    const f2 = mtof(n2) * Math.pow(2, p.osc2Cents / 1200) // the weather's metallic nudge
     const peak = Math.min(1.2, vel * p.punch) * 0.8
-    const decay = ghost ? p.decay * 0.5 : p.decay
+    const decay = grace ? p.decay * 0.5 : p.decay
     const end = t + p.attack + decay * 6 + 0.05
     const drop = Math.pow(2, p.dropSemis / 12)
 
     const osc1 = ctx.createOscillator()
     osc1.type = p.osc1Wave
-    osc1.frequency.setValueAtTime(f * drop, t)
-    osc1.frequency.exponentialRampToValueAtTime(f, t + p.pitchDecay)
+    osc1.frequency.setValueAtTime(f1 * drop, t)
+    osc1.frequency.exponentialRampToValueAtTime(f1, t + p.pitchDecay)
     const osc2 = ctx.createOscillator()
     osc2.type = 'triangle'
-    osc2.frequency.setValueAtTime(f * p.osc2Ratio * drop, t)
-    osc2.frequency.exponentialRampToValueAtTime(f * p.osc2Ratio, t + p.pitchDecay)
+    osc2.frequency.setValueAtTime(f2 * drop, t)
+    osc2.frequency.exponentialRampToValueAtTime(f2, t + p.pitchDecay)
     // FM amount falls with the hit, so the clang is in the attack
     const fm = ctx.createGain()
-    fm.gain.setValueAtTime(f * p.fmIndex * (accent ? 1.5 : 1), t)
-    fm.gain.setTargetAtTime(f * p.fmIndex * 0.2, t, decay * 0.5)
+    const fmBase = Math.sqrt(f1 * f2) // FM depth follows both tunings
+    fm.gain.setValueAtTime(fmBase * p.fmIndex * (accent ? 1.5 : 1), t)
+    fm.gain.setTargetAtTime(fmBase * p.fmIndex * 0.2, t, decay * 0.5)
     osc1.connect(fm).connect(osc2.frequency)
 
     const noise = ctx.createBufferSource()

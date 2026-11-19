@@ -66,7 +66,7 @@
         <div id="layers" class="layers" aria-label="Generative layers">
           <span data-layer="accent">Accent</span>
           <span data-layer="roll">Roll</span>
-          <span data-layer="ghost">Ghost</span>
+          <span data-layer="grace">Grace</span>
           <span data-layer="fill">Fill</span>
           <span data-layer="hats">Hats</span>
           <span data-layer="thunder">Thunder</span>
@@ -98,8 +98,19 @@
           <button id="default" type="button">Default pattern</button>
           <button id="clear" type="button">Clear</button>
         </div>
+        <div id="oscs" class="oscs" role="group" aria-label="Oscillators">
+          <div id="seq-to-group" class="seq-to">
+            <span class="osc-name">Sequence moves</span>
+            <div id="seq-to" class="seg" role="group" aria-label="Which oscillators the step pitches move">
+              <button type="button" data-to="both" aria-pressed="true">Both</button>
+              <button type="button" data-to="osc2" aria-pressed="false">Osc 2</button>
+              <button type="button" data-to="off" aria-pressed="false">Off</button>
+            </div>
+          </div>
+          <p class="hint">Tune each oscillator, then choose what the step pitches move. <em>Both</em> plays tuned drums; <em>Osc 2</em> keeps a fixed body under a moving click; <em>Off</em> makes the pattern all velocity. The weather still sets each oscillator's wave, the FM between them, the pitch drop and the mix.</p>
+        </div>
         <div id="steps" class="steps"></div>
-        <p class="hint">Each step has a pitch and a velocity. Low pitches with a long drop are kicks, middle ones toms, high ones blips. Velocity 0 is a rest, and steps under 50% are quiet steps that the moon thins out. Drag a knob up or down (Shift for fine), scroll, or use the arrow keys; double-click to reset. Space runs and stops; Z and X transpose. A MIDI note transposes the pattern; when stopped, it also triggers the current step.</p>
+        <p class="hint">Each step has a pitch and a velocity. Low pitches with a long drop are kicks, middle ones toms, high ones blips. Velocity 0 is a rest, and steps under 50% are quiet steps that the moon thins out. The weather only adds to steps you play: with every step at 0 it is silent. Drag a knob up or down (Shift for fine), scroll, or use the arrow keys; double-click to reset. Space runs and stops; Z and X transpose. A MIDI note transposes the pattern; when stopped, it also triggers the current step.</p>
       </details>
 
       <details class="test">

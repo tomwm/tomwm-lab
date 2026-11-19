@@ -23,7 +23,7 @@ export const MODULES = [
   { id: 'air', row: 0, label: 'Air quality', drives: 'Grit' },
   { id: 'wind', row: 1, label: 'Wind', drives: 'Tempo' },
   { id: 'gust', row: 1, label: 'Gusts', drives: 'Accents, rolls and swing' },
-  { id: 'cloud', row: 1, label: 'Cloud cover', drives: 'Filter and ghost notes' },
+  { id: 'cloud', row: 1, label: 'Cloud cover', drives: 'Filter and grace notes' },
   { id: 'rain', row: 1, label: 'Rain and snow', drives: 'Hi-hat layer' },
   { id: 'moon', row: 1, label: 'Moon', drives: 'Quiet steps' },
   { id: 'fog', row: 2, label: 'Fog', drives: 'Soft attack and chorus' },
@@ -44,24 +44,24 @@ export function euclid(k, n = 8) {
 //   tick: noise hit (freq = brightness, decay in seconds); thud: low hits on
 //   these steps of 8; ping: glassy chime; bursts: comes and goes
 const HATS = {
-  drizzle: { name: 'fine closed hats', tick: { prob: 0.8, freq: 9000, decay: 0.014, level: 0.4 } },
-  rain: { name: 'steady hats', tick: { prob: 0.6, freq: 7000, decay: 0.025, level: 0.5 }, thud: [4] },
-  showers: { name: 'hat bursts and claps', tick: { prob: 0.85, freq: 6000, decay: 0.03, level: 0.55 }, thud: [2, 6], bursts: true },
-  hail: { name: 'hard rimshots', tick: { prob: 0.55, freq: 3200, decay: 0.008, level: 0.9 }, thud: [3, 7] },
-  freezing: { name: 'icy pings', tick: { prob: 0.45, freq: 8000, decay: 0.018, level: 0.4 }, ping: 0.35 },
-  snow: { name: 'soft brushes', tick: { prob: 0.35, freq: 2200, decay: 0.08, level: 0.35 } },
+  drizzle: { name: 'fine closed hats', tick: { prob: 0.8, freq: 9000, decay: 0.03, level: 0.4 } },
+  rain: { name: 'steady hats', tick: { prob: 0.6, freq: 7000, decay: 0.045, level: 0.5 }, thud: [4] },
+  showers: { name: 'hat bursts and claps', tick: { prob: 0.85, freq: 6000, decay: 0.05, level: 0.55 }, thud: [2, 6], bursts: true },
+  hail: { name: 'hard rimshots', tick: { prob: 0.55, freq: 3200, decay: 0.015, level: 0.9 }, thud: [3, 7] },
+  freezing: { name: 'icy pings', tick: { prob: 0.45, freq: 8000, decay: 0.03, level: 0.4 }, ping: 0.35 },
+  snow: { name: 'soft brushes', tick: { prob: 0.35, freq: 2200, decay: 0.1, level: 0.35 } },
 }
 
 // The synth settings each module produces, so split rows can be merged.
 const OWNS = {
-  temp: ['osc1Wave', 'osc2Ratio', 'osc2Level', 'fmIndex'],
+  temp: ['osc1Wave', 'osc2Cents', 'osc2Level', 'fmIndex'],
   pressure: ['dropSemis', 'pitchDecay', 'tension'],
   humidity: ['decay', 'reverbWet', 'reverbSize'],
   sun: ['tiltDb', 'punch', 'nightDrive'],
   air: ['crushWet', 'crushSteps'],
   wind: ['bpm'],
   gust: ['accentProb', 'ratchetProb', 'swing'],
-  cloud: ['cutoff', 'filterEnv', 'filterQ', 'ghost', 'ghostLevel'],
+  cloud: ['cutoff', 'filterEnv', 'filterQ', 'grace', 'graceLevel'],
   rain: ['hatLevel', 'hatProb'],
   moon: ['quietProb'],
   fog: ['attack', 'chorusWet', 'noiseLevel'],
@@ -93,9 +93,10 @@ export function computePatch(w, d) {
   const cold = d.temp * (1 - warm)
 
   const p = {
-    // Temperature: cold is clanky metal (square, inharmonic FM); warm is round wood
+    // Temperature: cold is clanky metal (square wave, more FM, oscillator 2
+    // pushed slightly out of tune); warm is round wood. Tuning is the player's.
     osc1Wave: cold > 0.4 ? 'square' : 'triangle',
-    osc2Ratio: 1.5 + cold * 1.26 + tension * 0.4,
+    osc2Cents: cold * 70 + tension * 35,
     osc2Level: 0.3 + cold * 0.3,
     fmIndex: 0.3 + cold * 3.2 + tension * 2.5,
     // Pressure: high pressure is a deep, long pitch drop (a heavy kick)
@@ -118,14 +119,14 @@ export function computePatch(w, d) {
     accentProb: d.gust * w.gust.n * 0.45,
     ratchetProb: d.gust * (0.02 + w.gust.gustiness * 0.1),
     swing: d.gust * w.gust.gustiness * 0.15,
-    // Cloud: overcast closes the filter and fills rests with ghost notes
+    // Cloud: overcast closes the filter and adds soft grace notes before played steps
     cutoff: 14000 * Math.pow(900 / 14000, d.cloud * w.cloud.n),
     filterEnv: 3.5 * (1 - 0.55 * d.cloud * w.cloud.n),
     filterQ: 1 + d.cloud * w.cloud.n * 4,
-    ghost: euclid(Math.round(w.cloud.oktas / 2)), // at most 4 in 8, so rests stay rests
-    ghostLevel: d.cloud * 0.3,
+    grace: euclid(Math.round(w.cloud.oktas / 2)), // at most 4 positions in 8
+    graceLevel: d.cloud * 0.3,
     // Rain: a hi-hat layer, denser the harder it falls
-    hatLevel: raining ? d.rain * (0.3 + 0.7 * w.rain.n) * 0.5 : 0,
+    hatLevel: raining ? d.rain * (0.45 + 0.55 * w.rain.n) * 1.2 : 0,
     hatProb: 0.35 + 0.65 * w.rain.n,
     // Moon: quiet steps (velocity under half) play less as the moon wanes
     quietProb: 1 - d.moon * (1 - w.moon.illum) * 0.85,
@@ -175,7 +176,7 @@ export function computePatch(w, d) {
   }
   const hz = (f) => (f >= 1000 ? (f / 1000).toFixed(1) + ' kHz' : Math.round(f) + ' Hz')
   p.effects = {
-    temp: cold > 0.4 ? `Metallic: FM ${p.fmIndex.toFixed(1)}` : `Woody: FM ${p.fmIndex.toFixed(1)}`,
+    temp: `${cold > 0.4 ? 'Metallic' : 'Woody'}: FM ${p.fmIndex.toFixed(1)}, osc 2 +${Math.round(p.osc2Cents)} cents`,
     pressure: tension > 0.15 ? `Drop ${Math.round(p.dropSemis)} st, falling: tense`
       : `Drop ${Math.round(p.dropSemis)} semitones over ${Math.round(p.pitchDecay * 1000)} ms`,
     humidity: `Decay ${Math.round(p.decay * 1000)} ms, room ${pct(p.reverbWet / 0.3)}`,
@@ -183,7 +184,7 @@ export function computePatch(w, d) {
     air: w.air.v == null ? 'Clean signal' : `Crush ${pct(w.air.n)}`,
     wind: `${bpm} bpm`,
     gust: `Accents ${pct(p.accentProb / 0.45)}, rolls ${pct(p.ratchetProb / 0.12)}, swing ${pct(p.swing / 0.15)}`,
-    cloud: `Filter ${hz(p.cutoff)}, ${p.ghost.filter(Boolean).length} ghost notes in 8`,
+    cloud: `Filter ${hz(p.cutoff)}, grace notes on ${p.grace.filter(Boolean).length} of 8 steps`,
     rain: raining ? `Hats at ${pct(p.hatProb)} density` : 'Silent until it rains',
     moon: `Quiet steps play ${pct(p.quietProb)} of the time`,
     fog: `Attack ${Math.round(p.attack * 1000)} ms, chorus ${pct(w.fog.n)}`,

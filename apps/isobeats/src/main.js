@@ -3,7 +3,7 @@ import { createMap } from '../../isobar/src/map.js'
 import { AudioRecorder } from '../../isobar/src/recorder.js'
 import { connectMidi } from '../../isobar/src/input.js'
 import { MODULES, ROWS, ROW_SHORT, ROW_COLOURS, DEFAULT_DEPTHS, computePatch, mergePatches } from './patch.js'
-import { BeatEngine, BASE_NOTE } from './engine.js'
+import { BeatEngine, DEFAULT_VOICE } from './engine.js'
 import { createKnob } from './knob.js'
 
 const $ = (id) => document.getElementById(id)
@@ -35,6 +35,7 @@ const pattern = {
   steps: saved?.steps?.length === MAX_STEPS ? saved.steps : DEFAULT_STEPS.map((s) => ({ ...s })),
   length: saved?.length === 16 ? 16 : 8,
   transpose: saved?.transpose ?? 0,
+  voice: { ...DEFAULT_VOICE, ...(saved?.voice ?? {}) },
 }
 const savePattern = () => store.set('pattern', pattern)
 
@@ -305,6 +306,44 @@ $('locate').addEventListener('click', () => {
 
 const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']
 const noteName = (m) => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1)
+const SEQ_TO = { both: 'Both', osc2: 'Osc 2', off: 'Off' }
+
+// What a step's pitch knob shows: the note of the oscillator it moves
+function stepPitchLabel(v) {
+  const { voice, transpose } = pattern
+  if (voice.seqTo === 'off') return `+${v}`
+  return noteName((voice.seqTo === 'both' ? voice.tune1 : voice.tune2) + transpose + v)
+}
+
+// ---- Oscillators: tuning is the player's; the weather sets their character --
+const oscKnobs = [
+  ['tune1', 'Osc 1', 12, 72],
+  ['tune2', 'Osc 2', 12, 96],
+].map(([key, label, min, max]) => {
+  const wrap = document.createElement('div')
+  wrap.className = 'osc'
+  wrap.innerHTML = `<span class="osc-name">${label}</span>`
+  const k = createKnob({
+    label: `${label} tuning`, min, max, step: 1, value: pattern.voice[key], defaultValue: DEFAULT_VOICE[key],
+    format: (v) => noteName(v + pattern.transpose),
+    onInput: (v) => {
+      pattern.voice[key] = v
+      savePattern()
+      showPattern()
+    },
+  })
+  wrap.appendChild(k)
+  $('oscs').insertBefore(wrap, $('seq-to-group'))
+  return [key, k]
+})
+for (const b of document.querySelectorAll('#seq-to button')) {
+  b.addEventListener('click', () => {
+    pattern.voice.seqTo = b.dataset.to
+    savePattern()
+    showPattern()
+  })
+}
+
 const stepEls = []
 const pitchKnobs = []
 const velKnobs = []
@@ -317,7 +356,7 @@ for (let i = 0; i < MAX_STEPS; i++) {
   col.innerHTML = `<div class="step-head"><span class="led"></span><span>${i + 1}</span></div>`
   const pitch = createKnob({
     label: `Step ${i + 1} pitch`, min: 0, max: 36, step: 1, value: pattern.steps[i].pitch, defaultValue: 0,
-    format: (v) => noteName(BASE_NOTE + pattern.transpose + v),
+    format: (v) => stepPitchLabel(v),
     onInput: (v) => {
       pattern.steps[i].pitch = v
       savePattern()
@@ -353,6 +392,10 @@ function showPattern() {
     col.classList.toggle('quiet', pattern.steps[i].vel > 0 && pattern.steps[i].vel < 0.5)
   })
   $('steps').classList.toggle('sixteen', pattern.length === 16)
+  $('steps').classList.toggle('pitch-off', pattern.voice.seqTo === 'off')
+  for (const [key, k] of oscKnobs) k.setValue(pattern.voice[key])
+  for (const b of document.querySelectorAll('#seq-to button')) b.setAttribute('aria-pressed', String(b.dataset.to === pattern.voice.seqTo))
+  // (setValue above also refreshes each label, which depends on tuning and transpose)
   $('tr-value').textContent = pattern.transpose > 0 ? `+${pattern.transpose}` : pattern.transpose
   $('length').value = pattern.length
 }
