@@ -19,6 +19,7 @@ const apps = [
   'isotones',
   'isobeats',
   'isobars',
+  'dfal',
 ]
 
 mkdirSync(join(__dirname, 'dist'), { recursive: true })

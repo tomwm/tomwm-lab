@@ -56,6 +56,12 @@
       "port": 5184
     },
     {
+      "name": "dfal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:dfal"],
+      "port": 5185
+    },
+    {
       "name": "lab-dist",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "5190", "--directory", "dist"],

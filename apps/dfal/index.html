@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DFAL</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="title">
+          <h1>DFAL <span id="me" class="me"></span></h1>
+          <p class="sub">Drummer From Another Lab: an analogue-style percussion synth and 8-step sequencer, with a patch bay that reaches other synth windows.</p>
+        </div>
+        <div class="head-actions">
+          <button id="new-window" type="button" title="Open another DFAL window to patch to this one">Open another window</button>
+        </div>
+      </header>
+
+      <section class="transport" aria-label="Transport">
+        <button id="run" type="button" class="primary" aria-pressed="false">Run</button>
+        <button id="trig" type="button" title="Fire the envelopes on the current step">Trigger</button>
+        <button id="adv" type="button" title="Move on a step without playing it">Advance</button>
+        <button id="reset" type="button" title="The next step played is step 1">Reset</button>
+        <span class="divider" aria-hidden="true"></span>
+        <button id="default" type="button">Default sound</button>
+        <button id="randomise" type="button">Randomise steps</button>
+        <canvas id="scope" width="180" height="36" aria-hidden="true"></canvas>
+      </section>
+      <p id="status" class="status" role="status"></p>
+
+      <div class="rack">
+        <div class="front">
+          <div id="sections" class="sections"></div>
+          <div class="seq-card">
+            <h2>Steps</h2>
+            <div id="steps" class="steps"></div>
+            <p class="hint">Each step sets a pitch (semitones) and a velocity. Velocity scales the VCA and the VCF envelope amount, so 0 is a rest. Drag a knob up or down (Shift for fine), scroll, or use the arrow keys; double-click to reset. Space runs and stops.</p>
+          </div>
+        </div>
+
+        <aside class="bay-card" aria-labelledby="bay-title">
+          <h2 id="bay-title">Patch bay</h2>
+          <div id="bay" class="bay"></div>
+          <p class="hint">Click an output then an input (or the other way round) to patch a cable. Click the same pair again, or the cable itself, to remove it. Alt-click a jack to pull all its cables. Outputs have a filled label. Patching an input breaks its normal connection, as on hardware.</p>
+        </aside>
+      </div>
+
+      <section class="bus-card" aria-labelledby="bus-title">
+        <div class="bus-head">
+          <h2 id="bus-title">Other windows</h2>
+          <span id="bus-status" class="hint"></span>
+        </div>
+        <div id="bus" class="bus"></div>
+        <p class="hint">Synths open in other windows of this browser appear here. Click a jack here and one on this window's patch bay to join them, or arm a jack in one window and finish the cable in the other. Control voltages, envelopes, gates and pitch cross between windows; audio jacks only patch within their own window. A window that sends signals delays its own sound by 50 ms so both stay in time.</p>
+      </section>
+
+      <section class="cables-card" aria-labelledby="cables-title">
+        <div class="bus-head">
+          <h2 id="cables-title">Cables</h2>
+          <button id="clear-cables" type="button">Remove all</button>
+        </div>
+        <ul id="cable-list" class="cable-list"></ul>
+      </section>
+
+      <footer>A tribute to a classic semi-modular drum synth; DFAL is not affiliated with its maker. Part of the lab's patchable synths.</footer>
+    </main>
+    <svg id="cables" class="cables" aria-hidden="true"></svg>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

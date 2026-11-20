@@ -24,6 +24,7 @@
     "dev:isotones": "npm -w apps/isotones run dev",
     "dev:isobeats": "npm -w apps/isobeats run dev",
     "dev:isobars": "npm -w apps/isobars run dev",
+    "dev:dfal": "npm -w apps/dfal run dev",
     "test:tara-cards": "npm --prefix apps/tara-cards run test"
   },
   "overrides": {
