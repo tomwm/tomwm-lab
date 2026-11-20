@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Isobars</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="title">
+          <h1>Isobars</h1>
+          <p id="summary">Loading the pressure chart…</p>
+        </div>
+        <div class="place">
+          <div class="search">
+            <label for="place-input">Centre the chart on</label>
+            <input id="place-input" type="search" placeholder="Search for a place" autocomplete="off" />
+            <ul id="place-results" hidden></ul>
+          </div>
+          <button id="locate" type="button">Use my location</button>
+        </div>
+      </header>
+
+      <p id="status" class="status" role="status"></p>
+
+      <section class="play" aria-label="Link">
+        <div class="play-bar">
+          <button id="link" type="button" class="primary" aria-pressed="false" title="Send modulation to Isotones and Isobeats windows open in this browser">Link timing</button>
+          <span id="link-status" class="hint" role="status"></span>
+          <span id="clock" class="tempo"></span>
+        </div>
+      </section>
+
+      <details id="sec-map" class="panel" open>
+        <summary>Pressure chart</summary>
+        <div class="chart-wrap"><canvas id="chart" aria-label="Pressure chart with isobars and the listening point"></canvas></div>
+        <p id="mode-hint" class="hint"></p>
+      </details>
+
+      <details id="sec-move" class="panel boxed" open>
+        <summary>Listening point</summary>
+        <div class="move-bar">
+          <div class="seg" id="modes" role="group" aria-label="How the point moves"></div>
+          <div id="speed-wrap" class="speed"><span class="osc-name" id="speed-name">Speed</span></div>
+          <button id="clear-route" type="button" hidden>Clear route</button>
+        </div>
+        <div id="outputs" class="outputs" aria-label="Outputs"></div>
+      </details>
+
+      <details id="sec-patch" class="panel boxed" open>
+        <summary>Patches</summary>
+        <p class="hint">Each patch sends one output to something in Isotones or Isobeats. Press Link timing here and in those windows. Changes ride on top of their own weather, within limits.</p>
+        <div id="patches" class="patches"></div>
+        <button id="add-patch" type="button">Add patch</button>
+      </details>
+
+      <footer>Pressure data from <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a>. Modulates <a href="/isotones">Isotones</a> and <a href="/isobeats">Isobeats</a>.</footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

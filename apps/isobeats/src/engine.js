@@ -44,6 +44,7 @@ export class BeatEngine {
     this.runId = 0
     this.anchor = null
     this.onClock = null // called when the grid changes
+    this.modTranspose = 0 // semitones from Isobars, on top of the pattern's transpose
   }
 
   get started() {
@@ -256,7 +257,8 @@ export class BeatEngine {
 
   // [oscillator 1 note, oscillator 2 note] for a step
   _notes(step, shift = 0) {
-    const { voice, transpose } = this.pattern
+    const { voice } = this.pattern
+    const transpose = this.pattern.transpose + this.modTranspose
     const seq = step.pitch + shift
     return [
       voice.tune1 + transpose + (voice.seqTo === 'both' ? seq : 0),

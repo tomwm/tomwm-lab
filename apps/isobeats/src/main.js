@@ -3,6 +3,7 @@ import { createMap } from '../../isotones/src/map.js'
 import { AudioRecorder } from '../../isotones/src/recorder.js'
 import { connectMidi } from '../../isotones/src/input.js'
 import { Link } from '../../isotones/src/link.js'
+import { applyMods, modLabels, DESTS } from '../../isotones/src/mods.js'
 import { MODULES, ROWS, ROW_SHORT, ROW_COLOURS, DEFAULT_DEPTHS, computePatch, mergePatches } from './patch.js'
 import { BeatEngine, DEFAULT_VOICE } from './engine.js'
 import { createKnob } from './knob.js'
@@ -41,6 +42,14 @@ const pattern = {
 const savePattern = () => store.set('pattern', pattern)
 
 const engine = new BeatEngine(pattern)
+// Isobars' modulation, laid over the weather patch
+let basePatch = null
+let mods = null
+const TRANSPOSE = DESTS.isobeats.find((d) => d.id === 'transpose')
+function applyModded() {
+  engine.modTranspose = mods?.transpose ? TRANSPOSE.semitones(mods.transpose) : 0
+  if (basePatch) engine.apply(applyMods('isobeats', basePatch, mods))
+}
 const LONDON = { name: 'London, England, United Kingdom', lat: 51.51, lon: -0.13 }
 const state = {
   // One place per row: Voice, Groove, Space and drama
@@ -145,7 +154,8 @@ function refresh() {
     return byData.get(d)
   }
   const patch = mergePatches(datas.map(patchFor))
-  engine.apply(patch)
+  basePatch = patch
+  applyModded()
   for (const m of MODULES) {
     const c = cards[m.id]
     c.reading.textContent = patch.readings[m.id]
@@ -646,7 +656,20 @@ draw()
 // swing and bar lines, and starts its sequence when this one runs.
 
 const link = new Link('isobeats', {
-  onPeers: () => showLink(),
+  onMessage(msg) {
+    if (msg.app !== 'isobars' || msg.type !== 'mod') return
+    const labels = modLabels('isobeats', mods).join()
+    mods = msg.offsets?.isobeats ?? null
+    applyModded()
+    if (modLabels('isobeats', mods).join() !== labels) showLink()
+  },
+  onPeers() {
+    if (!link.peerCount('isobars') && mods) {
+      mods = null
+      applyModded()
+    }
+    showLink()
+  },
 })
 link.extra = () => ({ clock: engine.clockState() })
 engine.onClock = (type) => {
@@ -660,14 +683,19 @@ function showLink() {
   $('link').textContent = on ? 'Linked' : 'Link timing'
   $('link').setAttribute('aria-pressed', String(on))
   $('link').classList.toggle('on', on)
+  const moved = modLabels('isobeats', mods)
+  const lead = n ? `Leading ${n > 1 ? n + ' Isotones windows' : 'Isotones'}` : moved.length ? '' : 'Waiting for an Isotones or Isobars window in this browser'
   $('link-status').textContent = !on ? ''
-    : !n ? 'Waiting for an Isotones window in this browser'
-    : `Leading ${n > 1 ? n + ' Isotones windows' : 'Isotones'}`
+    : [lead, moved.length ? `Isobars moving ${moved.join(', ')}` : ''].filter(Boolean).join(' · ')
 }
 
 function setLinked(on) {
   link.setEnabled(on)
   store.set('link', on)
+  if (!on && mods) {
+    mods = null
+    applyModded()
+  }
   showLink()
 }
 $('link').addEventListener('click', () => setLinked(!link.enabled))

@@ -6,6 +6,7 @@ import { Sequencer } from './sequencer.js'
 import { createMap } from './map.js'
 import { AudioRecorder } from './recorder.js'
 import { Link } from './link.js'
+import { applyMods, modLabels } from './mods.js'
 
 const $ = (id) => document.getElementById(id)
 // Settings saved under the old name (Isobar) move across once.
@@ -33,6 +34,10 @@ const store = {
 }
 
 const engine = new Engine()
+// Isobars' modulation, laid over the weather patch
+let basePatch = null
+let mods = null
+const applyModded = () => basePatch && engine.apply(applyMods('isotones', basePatch, mods))
 const LONDON = { name: 'London, England, United Kingdom', lat: 51.51, lon: -0.13 }
 const firstPlace = store.get('place', LONDON) // from before rows could be split
 const state = {
@@ -138,7 +143,8 @@ function refresh() {
     return byData.get(d)
   }
   const patch = withLink(mergePatches(datas.map(patchFor)))
-  engine.apply(patch)
+  basePatch = patch
+  applyModded()
   for (const m of MODULES) {
     const c = cards[m.id]
     c.reading.textContent = patch.readings[m.id]
@@ -562,6 +568,13 @@ draw()
 
 const link = new Link('isotones', {
   onMessage(msg) {
+    if (msg.app === 'isobars' && msg.type === 'mod') {
+      const labels = modLabels('isotones', mods).join()
+      mods = msg.offsets?.isotones ?? null
+      applyModded()
+      if (modLabels('isotones', mods).join() !== labels) showLink()
+      return
+    }
     if (msg.app !== 'isobeats' || !msg.clock) return
     const before = engine.follow
     engine.follow = msg.clock
@@ -576,6 +589,10 @@ const link = new Link('isotones', {
     if (!link.peerCount('isobeats') && engine.follow) {
       engine.follow = null
       refresh()
+    }
+    if (!link.peerCount('isobars') && mods) {
+      mods = null
+      applyModded()
     }
     showLink()
   },
@@ -605,10 +622,12 @@ function showLink() {
   $('link').textContent = on ? 'Linked' : 'Link timing'
   $('link').setAttribute('aria-pressed', String(on))
   $('link').classList.toggle('on', on)
-  $('link-status').textContent = !on ? ''
-    : !link.peerCount('isobeats') || !f ? 'Waiting for an Isobeats window in this browser'
+  const moved = modLabels('isotones', mods)
+  const tempo = !link.peerCount('isobeats') || !f ? (moved.length ? '' : 'Waiting for an Isobeats or Isobars window in this browser')
     : f.running ? `Following Isobeats · ${f.bpm} bpm`
     : `Linked to Isobeats · ${f.bpm} bpm · your sequence starts when Isobeats runs`
+  $('link-status').textContent = !on ? ''
+    : [tempo, moved.length ? `Isobars moving ${moved.join(', ')}` : ''].filter(Boolean).join(' · ')
 }
 
 function setLinked(on) {
@@ -617,6 +636,10 @@ function setLinked(on) {
   if (!on && engine.follow) {
     engine.follow = null
     refresh()
+  }
+  if (!on && mods) {
+    mods = null
+    applyModded()
   }
   showLink()
 }

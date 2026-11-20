@@ -13,6 +13,7 @@
     { "source": "/history-timeline/:path*",      "destination": "/history-timeline/index.html" },
     { "source": "/isotones/:path*",              "destination": "/isotones/index.html" },
     { "source": "/isobeats/:path*",              "destination": "/isobeats/index.html" },
+    { "source": "/isobars/:path*",               "destination": "/isobars/index.html" },
     { "source": "/morgan-map/api/:path*",        "destination": "https://morgan-map.vercel.app/api/:path*" },
     { "source": "/morgan-map/:path*",            "destination": "https://morgan-map.vercel.app/:path*" },
     { "source": "/morgan-map",                   "destination": "https://morgan-map.vercel.app" },
