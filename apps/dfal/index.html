@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DFAL</title>
-    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <main>
@@ -14,6 +14,7 @@
           <p class="sub">Drummer From Another Lab: an analogue-style percussion synth and 8-step sequencer, with a patch bay that reaches other synth windows.</p>
         </div>
         <div class="head-actions">
+          <button id="open-brother" type="button" title="Open a Brother 32 mono synth window to patch to this one">Open Brother 32</button>
           <button id="new-window" type="button" title="Open another DFAL window to patch to this one">Open another window</button>
         </div>
       </header>
@@ -36,14 +37,14 @@
           <div class="seq-card">
             <h2>Steps</h2>
             <div id="steps" class="steps"></div>
-            <p class="hint">Each step sets a pitch (semitones) and a velocity. Velocity scales the VCA and the VCF envelope amount, so 0 is a rest. Drag a knob up or down (Shift for fine), scroll, or use the arrow keys; double-click to reset. Space runs and stops.</p>
+            <p class="hint">Each step sets a pitch (semitones; the knobs span about ten octaves, so small moves go a long way) and a velocity. Velocity sets the level of all three envelopes and slightly lengthens their decays, so 0 is a rest. Drag a knob up or down (Shift for fine), scroll, or use the arrow keys; double-click to reset. Space runs and stops.</p>
           </div>
         </div>
 
         <aside class="bay-card" aria-labelledby="bay-title">
           <h2 id="bay-title">Patch bay</h2>
           <div id="bay" class="bay"></div>
-          <p class="hint">Click an output then an input (or the other way round) to patch a cable. Click the same pair again, or the cable itself, to remove it. Alt-click a jack to pull all its cables. Outputs have a filled label. Patching an input breaks its normal connection, as on hardware.</p>
+          <p class="hint">Click an output then an input (or the other way round) to patch a cable. Click the same pair again, or the cable itself, to remove it. Alt-click a jack to pull all its cables. Outputs have a filled label. Patching Trigger, Velocity, Ext audio or VCF mod breaks its normal connection; the other inputs add to their knobs, as on the hardware.</p>
         </aside>
       </div>
 
@@ -53,7 +54,7 @@
           <span id="bus-status" class="hint"></span>
         </div>
         <div id="bus" class="bus"></div>
-        <p class="hint">Synths open in other windows of this browser appear here. Click a jack here and one on this window's patch bay to join them, or arm a jack in one window and finish the cable in the other. Control voltages, envelopes, gates and pitch cross between windows; audio jacks only patch within their own window. A window that sends signals delays its own sound by 50 ms so both stay in time.</p>
+        <p class="hint">Synths open in other windows of this browser appear here. Click a jack here and one on this window's patch bay to join them, or arm a jack in one window and finish the cable in the other. Control voltages, gates, pitch and audio all cross between windows (audio can crackle if a window is busy). A window that sends signals delays its own sound by 50 ms so both stay in time.</p>
       </section>
 
       <section class="cables-card" aria-labelledby="cables-title">
@@ -67,6 +68,6 @@
       <footer>A tribute to a classic semi-modular drum synth; DFAL is not affiliated with its maker. Part of the lab's patchable synths.</footer>
     </main>
     <svg id="cables" class="cables" aria-hidden="true"></svg>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

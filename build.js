@@ -20,6 +20,7 @@ const apps = [
   'isobeats',
   'isobars',
   'dfal',
+  'brother32',
 ]
 
 mkdirSync(join(__dirname, 'dist'), { recursive: true })

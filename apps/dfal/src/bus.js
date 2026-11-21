@@ -9,12 +9,14 @@
 // Rules every module follows, so they can be patched together:
 // - Signals are in volts, like hardware: 1 V per octave for pitch, 0 to 5 V for
 //   envelopes, velocity and gates, ±5 V for audio. A gate is high above 1.5 V.
-// - Between windows, a signal is sent as samples every STEP_S seconds, stamped
-//   with the computer's clock (see wallNow). The receiver plays each one
+// - Between windows, a signal is sent as samples stamped with the computer's
+//   clock (see wallNow): audio jacks at the full sample rate, others at about
+//   1.5 kHz. bus-worklet.js does this on the audio thread. The receiver plays each one
 //   BUS_DELAY seconds after that stamp, which hides the time messages take.
 //   A module that sends signals delays its own sound by the same amount, so the
 //   two windows' speakers stay in time.
-// - Audio jacks only patch within their own window: the bus is too slow for audio.
+// - Audio between windows works but is heavier, and can crackle if a window is
+//   busy for longer than BUS_DELAY.
 //
 // The cable list is shared by every module (localStorage plus messages), so a
 // cable made in one window appears in the other, and cables come back when the
@@ -27,7 +29,6 @@ const GONE_AFTER = 3500
 const ARM_FOR = 30000 // ms an armed jack waits for its other end
 
 export const BUS_DELAY = 0.05 // seconds
-export const STEP_S = 1 / 1500 // seconds between streamed samples (about 0.7 ms)
 
 export const wallNow = () => performance.timeOrigin + performance.now()
 
@@ -94,7 +95,7 @@ export class PatchBus {
   }
 
   get name() {
-    return `${this.title} ${this.id?.split('-').pop() ?? ''}`.trim()
+    return this.id ? this.moduleName(this.id) : this.title
   }
 
   // Join the bus. Listens briefly to learn which numbers are taken, then picks
@@ -200,7 +201,9 @@ export class PatchBus {
   }
   moduleName(id) {
     const m = this.module(id)
-    return m ? `${m.title} ${id.split('-').pop()}` : id
+    if (!m) return id
+    const n = id.split('-').pop()
+    return /\d$/.test(m.title) ? `${m.title} #${n}` : `${m.title} ${n}`
   }
   jack(end) {
     return this.module(end.mod)?.jacks.find((j) => j.id === end.jack)
@@ -226,10 +229,7 @@ export class PatchBus {
     const jb = this.jack(b)
     if (!ja || !jb) return { error: 'That jack has gone' }
     if (ja.dir === jb.dir) return { error: `Those are both ${ja.dir === 'in' ? 'inputs' : 'outputs'}` }
-    const [from, to, jFrom] = ja.dir === 'out' ? [a, b, ja] : [b, a, jb]
-    if (from.mod !== to.mod && jFrom.type === 'audio') {
-      return { error: `${jFrom.label} is audio, which only patches within its own window` }
-    }
+    const [from, to] = ja.dir === 'out' ? [a, b] : [b, a]
     if (this.cables.some((c) => sameEnd(c.from, from) && sameEnd(c.to, to))) return { error: 'Already patched' }
     const cable = { id: Math.random().toString(36).slice(2, 10), from: { ...from }, to: { ...to } }
     this.cables = [...this.cables, cable]

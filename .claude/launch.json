@@ -62,6 +62,19 @@
       "port": 5185
     },
     {
+      "name": "brother32",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:brother32"],
+      "port": 5186
+    },
+    {
+      "name": "synths",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:synths"],
+      "port": 5187,
+      "url": "http://localhost:5187"
+    },
+    {
       "name": "lab-dist",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "5190", "--directory", "dist"],

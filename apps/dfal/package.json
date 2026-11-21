@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:synths": "vite --config synths.config.js",
     "build": "vite build",
     "preview": "vite preview"
   },

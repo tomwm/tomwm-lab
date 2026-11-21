@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brother 32</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="title">
+          <h1>Brother 32 <span id="me" class="me"></span></h1>
+          <p class="sub">An analogue-style mono synth with a 32-step sequencer and a patch bay that reaches other synth windows. Patch it to DFAL.</p>
+        </div>
+        <div class="head-actions">
+          <button id="open-dfal" type="button" title="Open a DFAL drum synth window to patch to this one">Open DFAL</button>
+          <button id="new-window" type="button" title="Open another Brother 32 window">Open another window</button>
+        </div>
+      </header>
+
+      <section class="transport" aria-label="Transport">
+        <button id="run" type="button" class="primary" aria-pressed="false">Run</button>
+        <button id="reset" type="button" title="The next step played is step 1">Reset</button>
+        <span class="divider" aria-hidden="true"></span>
+        <div class="octave" role="group" aria-label="Octave">
+          <span>Octave</span>
+          <button id="oct-down" type="button" aria-label="Octave down">−</button>
+          <output id="oct-value">0</output>
+          <button id="oct-up" type="button" aria-label="Octave up">+</button>
+        </div>
+        <span class="divider" aria-hidden="true"></span>
+        <button id="default" type="button">Default sound</button>
+        <canvas id="scope" width="180" height="36" aria-hidden="true"></canvas>
+      </section>
+      <p id="status" class="status" role="status"></p>
+
+      <div class="rack">
+        <div class="front">
+          <div id="sections" class="sections"></div>
+          <div class="seq-card">
+            <div class="seq-bar">
+              <h2>Sequencer</h2>
+              <label>Steps <select id="length"></select></label>
+              <button id="entry" type="button" aria-pressed="false" title="Keys set the selected step's note and move on to the next step">Step entry</button>
+              <button id="randomise" type="button">Randomise</button>
+              <button id="default-pattern" type="button">Default pattern</button>
+              <button id="clear" type="button">Clear</button>
+            </div>
+            <div id="steps" class="msteps"></div>
+            <div id="keyboard" class="keyboard" aria-label="Keyboard"></div>
+            <p class="hint">Click a step to select it. Its gate button cycles On → Tie (held into the next step) → Rest. A accents it, G glides into it, ×1 repeats it up to four times. Scroll on a note or use the arrow keys to change it, or turn on Step entry and play the keyboard. Keys A to ; play two octaves (W, E, T, Y, U, O, P are the black keys). Space runs and stops.</p>
+          </div>
+        </div>
+
+        <aside class="bay-card" aria-labelledby="bay-title">
+          <h2 id="bay-title">Patch bay</h2>
+          <div id="bay" class="bay"></div>
+          <p class="hint">Click an output then an input (or the other way round) to patch a cable. Click the same pair again, or the cable itself, to remove it. Alt-click a jack to pull all its cables. Outputs have a filled label. Patching an input breaks its normal connection, as on hardware.</p>
+        </aside>
+      </div>
+
+      <section class="bus-card" aria-labelledby="bus-title">
+        <div class="bus-head">
+          <h2 id="bus-title">Other windows</h2>
+          <span id="bus-status" class="hint"></span>
+        </div>
+        <div id="bus" class="bus"></div>
+        <p class="hint">Synths open in other windows of this browser appear here. Click a jack here and one on this window's patch bay to join them, or arm a jack in one window and finish the cable in the other. Control voltages, gates, pitch and audio all cross between windows (audio can crackle if a window is busy). A window that sends signals delays its own sound by 50 ms so both stay in time.</p>
+      </section>
+
+      <section class="cables-card" aria-labelledby="cables-title">
+        <div class="bus-head">
+          <h2 id="cables-title">Cables</h2>
+          <button id="clear-cables" type="button">Remove all</button>
+        </div>
+        <ul id="cable-list" class="cable-list"></ul>
+      </section>
+
+      <footer>A tribute to a classic semi-modular mono synth; Brother 32 is not affiliated with its maker. Part of the lab's patchable synths, with <a href="/dfal">DFAL</a>.</footer>
+    </main>
+    <svg id="cables" class="cables" aria-hidden="true"></svg>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
